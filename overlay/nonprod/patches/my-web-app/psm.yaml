@@ -1,0 +1,8 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stackrox-central-services
+  namespace: stackrox
+spec:
+  replicas: 1

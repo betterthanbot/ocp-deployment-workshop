@@ -1,0 +1,11 @@
+docker.io:
+  images:
+    library/nginx:
+      - 1.25.3
+    library/busybox:
+      - latest
+
+quay.io:
+  images:
+    prometheus/node-exporter:
+      - v1.6.1

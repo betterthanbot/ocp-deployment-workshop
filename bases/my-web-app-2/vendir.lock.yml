@@ -1,0 +1,11 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: 'Merge pull request #13 from betterthanbot/feature/kyverno...'
+      sha: c180fc9bf790d85f677460eafa85aefce0a60653
+      tags:
+      - 0.2.0
+    path: .
+  path: vendor
+kind: LockConfig

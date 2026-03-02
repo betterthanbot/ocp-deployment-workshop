@@ -1,0 +1,10 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: vendor 
+    contents:
+      - path: .
+        git:
+          url: https://github.com/betterthanbot/openshift4.git
+          ref: 0.2.0
+        newRootPath: docs/templates/helm/my-web-app
