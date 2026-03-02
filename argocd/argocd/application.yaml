@@ -1,0 +1,27 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: my-sno-cluster
+#   namespace: openshift-gitops-operator
+# spec:
+#   project: openshift4-community
+
+#   source:
+#     repoURL: https://github.com/betterthanbot/openshift4.git
+#     targetRevision: main
+#     path: overlay/my-sno-cluster
+#     kustomize: {}
+
+#   destination:
+#     server: https://kubernetes.default.svc
+#     # This is required even if manifests create multiple namespaces.
+#     # Set to where MOST resources go, or "default" if unsure.
+#     namespace: default
+
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ApplyOutOfSyncOnly=true

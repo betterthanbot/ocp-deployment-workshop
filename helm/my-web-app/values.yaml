@@ -1,0 +1,75 @@
+# Default values for my-webapp.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true
+
+# Resources are REQUIRED for HPA to calculate utilization
+resources: 
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Horizontal Pod Autoscaler (Scaling Pod Count)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Vertical Pod Autoscaler (Scaling Pod Size)
+# Warning: Do not enable HPA (on CPU/Mem) and VPA (Auto) simultaneously 
+# without careful configuration, as they can conflict.
+verticalAutoscaling:
+  enabled: false
+  updateMode: "Off" # Options: "Off" (Recommend only), "Initial", "Recreate", "Auto"
+  minAllowed:
+    cpu: 50m
+    memory: 64Mi
+  maxAllowed:
+    cpu: 1000m
+    memory: 1Gi
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+route:
+  enabled: true
+  hostname: my-webapp.example.com
+  tls:
+    termination: edge
+
+persistence:
+  enabled: true
+  size: 1Gi
+  accessMode: ReadWriteOnce
+  storageClass: ""
+
+livenessProbe:
+  path: /
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  path: /
+  initialDelaySeconds: 5
+  periodSeconds: 10

@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: openshift4-appset
+  namespace: openshift-gitops
+spec:
+  generators:
+    - list:
+        elements:
+          - name: my-sno-cluster
+            repoURL: https://github.com/betterthanbot/openshift4.git
+            revision: feature/argocd
+            path: overlay/my-sno-cluster
+            destNamespace: default
+            destServer: https://kubernetes.default.svc
+
+  template:
+    metadata:
+      name: "{{name}}"
+    spec:
+      project: openshift4-community
+
+      source:
+        repoURL: "{{repoURL}}"
+        targetRevision: "{{revision}}"
+        path: "{{path}}"
+        kustomize: {}
+
+      destination:
+        server: "{{destServer}}"
+        namespace: "{{destNamespace}}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true

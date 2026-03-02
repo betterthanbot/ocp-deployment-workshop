@@ -1,0 +1,62 @@
+# --------------------------------------------------
+
+# macOS System Files
+
+# --------------------------------------------------
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# macOS folders
+
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# --------------------------------------------------
+
+# Windows System Files
+
+# --------------------------------------------------
+
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# --------------------------------------------------
+
+# Logs and Temp Files
+
+# --------------------------------------------------
+
+*.log
+*.tmp
+*.temp
+
+# --------------------------------------------------
+
+# Node / Python / Common Dev Artifacts (Safe Defaults)
+
+# --------------------------------------------------
+
+node_modules/
+**pycache**/
+*.pyc
+.env
+.env.*
+
+# --------------------------------------------------
+
+# Kubernetes / ArgoCD Generated or Local Files
+
+# --------------------------------------------------
+
+*.retry
+*.bak
+*.orig

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: openshift4-community
+  namespace: openshift-gitops
+spec:
+  description: "Open community GitOps project for shared OpenShift enablement assets"
+
+  sourceRepos:
+    - https://github.com/betterthanbot/openshift4.git
+
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+
+  # Allow cluster-scoped + namespaced resources (tune down later if you want)
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
