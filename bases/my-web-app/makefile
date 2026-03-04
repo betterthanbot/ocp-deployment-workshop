@@ -14,7 +14,6 @@ template:
 	helm template \
 	my-web-app \
 	--values=values.yaml \
-	--namespace=my-demo-app \
 	vendor/ \
 	> deployment.yaml
 

@@ -2,6 +2,8 @@
 
 replicaCount: 1
 
+namespace: my-web-app
+
 image:
   repository: nginx
   pullPolicy: IfNotPresent
