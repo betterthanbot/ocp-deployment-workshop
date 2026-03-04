@@ -1,8 +1,19 @@
 ---
+# Source: my-webapp/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stackrox-central-services
-  namespace: stackrox
+  name: my-web-app-my-webapp
+  namespace: default
 spec:
-  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: my-webapp
+          resources:
+            limits:
+              cpu: 100m
+              memory: 150Mi
+            requests:
+              cpu: 5pm
+              memory: 100Mi
