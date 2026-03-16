@@ -6,7 +6,5 @@ resources:
 - ./../../bases/my-web-app/
 - ./secrets/
 
-
-
 patches:
 - path: ./patches/my-web-app/psm.yaml

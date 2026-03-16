@@ -5,6 +5,6 @@ directories:
     contents:
       - path: .
         git:
-          url: https://github.com/betterthanbot/openshift4.git
-          ref: 0.2.0
-        newRootPath: docs/templates/helm/my-web-app
+          url: https://github.com/betterthanbot/chart-template.git
+          ref: main
+        # newRootPath: docs/templates/helm/my-web-app

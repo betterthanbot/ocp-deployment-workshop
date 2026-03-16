@@ -5,11 +5,9 @@ kind: Kustomization
 namespace: my-web-app
 
 resources:
-- ./namespace.yaml
-- ./deployment.yaml
-
+- ./my-web-app.yaml
 
 images:
 - name: nginx
-  newName: docker.io/library/nginx
-  newTag: 1.25.3
+  newName: registry.redhat.io/ubi9/nginx-120
+  digest: sha256:395aa7426ca32aa259e536e185f3c72e1147b22fe6be43438c919c63dd5d7809

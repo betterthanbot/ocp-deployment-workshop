@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: templates
+      sha: 0005d4a6adabb565d0876a09b58c80b5792cea35
+    path: .
+  path: vendor
+kind: LockConfig

@@ -15,7 +15,7 @@ template:
 	my-web-app \
 	--values=values.yaml \
 	vendor/ \
-	> deployment.yaml
+	> my-web-app.yaml
 
 # 2. Repo to Disk (Reads the YAML and pulls deduplicated layers)
 save-images:
