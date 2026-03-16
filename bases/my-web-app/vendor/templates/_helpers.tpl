@@ -7,8 +7,7 @@ Expand the name of the chart.
 
 {{/*
 Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
+Truncated at 63 chars (DNS spec limit).
 */}}
 {{- define "my-webapp.fullname" -}}
 {{- if .Values.fullnameOverride }}
@@ -24,7 +23,7 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
-Create chart name and version as used by the chart label.
+Chart name + version label
 */}}
 {{- define "my-webapp.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
@@ -51,12 +50,34 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create the name of the service account to use
+Service account name
 */}}
 {{- define "my-webapp.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
 {{- default (include "my-webapp.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+DB port — returns the correct port number for the configured engine
+*/}}
+{{- define "my-webapp.dbPort" -}}
+{{- if eq .Values.database.engine "postgresql" }}
+{{- .Values.database.postgresql.port }}
+{{- else if eq .Values.database.engine "mysql" }}
+{{- .Values.database.mysql.port }}
+{{- end }}
+{{- end }}
+
+{{/*
+DB port name — used as the named port in the DB Service
+*/}}
+{{- define "my-webapp.dbPortName" -}}
+{{- if eq .Values.database.engine "postgresql" -}}
+postgresql
+{{- else if eq .Values.database.engine "mysql" -}}
+mysql
 {{- end }}
 {{- end }}

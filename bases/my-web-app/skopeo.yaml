@@ -1,7 +1,7 @@
-docker.io:
+registry.redhat.io:
   images:
-    library/nginx:
-      - 1.25.3
+    ubi9/httpd-24:
+      - sha256:38d71a4cf177f39a2bbe745183009943dbbf404de02aa5f879694aa024a4e6ac
     library/busybox:
       - latest
 

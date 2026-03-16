@@ -1,25 +1,83 @@
 ---
-# Source: my-webapp/templates/serviceaccount.yaml
+# Source: betterthanbot/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: my-web-app-my-webapp
+  name: my-web-app-betterthanbot
   labels:
-    helm.sh/chart: my-webapp-0.1.0
-    app.kubernetes.io/name: my-webapp
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 ---
-# Source: my-webapp/templates/pvc.yaml
+# Source: betterthanbot/templates/configmap.yaml
+# ============================================================
+# ConfigMap — Application environment variables
+# Non-sensitive config only. Secrets go in secret.yaml.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-web-app-betterthanbot-config
+  labels:
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
+    app.kubernetes.io/instance: my-web-app
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+---
+# Source: betterthanbot/templates/configmap.yaml
+# ============================================================
+# ConfigMap — Default web content + httpd server config
+#
+# index.html: Placeholder page served until real content is
+#   deployed to the PVC. Prevents the httpd 403 that kills
+#   liveness/readiness probes on a fresh empty PVC.
+#
+# servername.conf: Suppresses the AH00558 ServerName warning
+#   by explicitly setting ServerName to the pod's release name.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-web-app-betterthanbot-www
+  labels:
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
+    app.kubernetes.io/instance: my-web-app
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head><title>my-web-app-betterthanbot</title></head>
+      <body>
+        <h1>my-web-app-betterthanbot</h1>
+        <p>Application deployed successfully. Replace this page with your content.</p>
+      </body>
+    </html>
+  servername.conf: |
+    ServerName my-web-app-betterthanbot
+---
+# Source: betterthanbot/templates/pvc.yaml
+# ============================================================
+# PersistentVolumeClaim — Application web content / uploads
+# ============================================================
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: my-web-app-my-webapp
+  name: my-web-app-betterthanbot-app
   labels:
-    helm.sh/chart: my-webapp-0.1.0
-    app.kubernetes.io/name: my-webapp
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
@@ -27,39 +85,48 @@ metadata:
 spec:
   accessModes:
     - "ReadWriteOnce"
+  volumeMode: Filesystem
   resources:
     requests:
       storage: "1Gi"
+# ============================================================
+# PersistentVolumeClaim — PostgreSQL data volume
+# Only created when database.engine = postgresql
+# ============================================================
+# ============================================================
+# PersistentVolumeClaim — MySQL data volume
+# Only created when database.engine = mysql
+# ============================================================
 ---
-# Source: my-webapp/templates/rolebinding.yaml
+# Source: betterthanbot/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: my-web-app-my-webapp
+  name: my-web-app-betterthanbot
   labels:
-    helm.sh/chart: my-webapp-0.1.0
-    app.kubernetes.io/name: my-webapp
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 subjects:
   - kind: ServiceAccount
-    name: my-web-app-my-webapp
+    name: my-web-app-betterthanbot
     namespace: default
 roleRef:
   kind: ClusterRole
   name: view # Change this to your specific role if needed
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: my-webapp/templates/service.yaml
+# Source: betterthanbot/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: my-web-app-my-webapp
+  name: my-web-app-betterthanbot
   labels:
-    helm.sh/chart: my-webapp-0.1.0
-    app.kubernetes.io/name: my-webapp
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
@@ -67,22 +134,22 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 80
+    - port: 8080
       targetPort: http
       protocol: TCP
       name: http
   selector:
-    app.kubernetes.io/name: my-webapp
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
 ---
-# Source: my-webapp/templates/deployment.yaml
+# Source: betterthanbot/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-web-app-my-webapp
+  name: my-web-app-betterthanbot
   labels:
-    helm.sh/chart: my-webapp-0.1.0
-    app.kubernetes.io/name: my-webapp
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
@@ -91,27 +158,45 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: my-webapp
+      app.kubernetes.io/name: betterthanbot
       app.kubernetes.io/instance: my-web-app
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: my-webapp
+        app.kubernetes.io/name: betterthanbot
         app.kubernetes.io/instance: my-web-app
     spec:
-      serviceAccountName: my-web-app-my-webapp
+      serviceAccountName: my-web-app-betterthanbot
+
+      # -------------------------------------------------------
+      # OCP restricted-v2 SCC compliance (OCP 4.11+)
+      # runAsNonRoot is enforced at the pod level; the container
+      # securityContext below mirrors this for defense-in-depth.
+      # -------------------------------------------------------
+      securityContext:
+        runAsNonRoot: true
+
       containers:
-        - name: my-webapp
-          image: "nginx:latest"
+        - name: betterthanbot
+          image: "registry.access.redhat.com/ubi9/httpd-24:latest"
           imagePullPolicy: IfNotPresent
+
+          # Container-level SCC hardening
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
-          
-          # --- CRITICAL UPDATE FOR HPA/VPA ---
-          # This pulls the 'resources' block from your values.yaml.
-          # Without requests/limits, HPA cannot calculate percentage utilization.
+
+          # Required for HPA utilisation calculation
           resources:
             limits:
               cpu: 200m
@@ -119,7 +204,17 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          # -----------------------------------
+
+          # -------------------------------------------------------
+          # App ConfigMap env vars
+          # -------------------------------------------------------
+          envFrom:
+            - configMapRef:
+                name: my-web-app-betterthanbot-config
+
+          # -------------------------------------------------------
+          # Database connection env vars (injected from Secret)
+          # -------------------------------------------------------
 
           livenessProbe:
             httpGet:
@@ -133,33 +228,80 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
-          
+
           volumeMounts:
-            - name: data
-              mountPath: /usr/share/nginx/html
+            - name: app-data
+              # UBI9 httpd-24 document root
+              mountPath: /var/www/html
+            # Default index.html — prevents 403 on empty PVC at first boot.
+            # Once real content exists on the PVC this file is shadowed.
+            - name: www-defaults
+              mountPath: /var/www/html/index.html
+              subPath: index.html
+            # Suppress AH00558 ServerName warning
+            - name: www-defaults
+              mountPath: /etc/httpd/conf.d/servername.conf
+              subPath: servername.conf
 
       volumes:
-        - name: data
+        - name: app-data
           persistentVolumeClaim:
-            claimName: my-web-app-my-webapp
+            claimName: my-web-app-betterthanbot-app
+        - name: www-defaults
+          configMap:
+            name: my-web-app-betterthanbot-www
 ---
-# Source: my-webapp/templates/route.yaml
+# Source: betterthanbot/templates/db-service.yaml
+# ============================================================
+# Database ClusterIP Service
+# Provides a stable DNS name for the app to reach the DB:
+#   postgresql: <fullname>-db:5432
+#   mysql:      <fullname>-db:3306
+# ============================================================
+---
+# Source: betterthanbot/templates/db-statefulset.yaml
+# ============================================================
+# Database StatefulSet
+# Deploys an in-cluster PostgreSQL or MySQL instance.
+# Both images are Red Hat UBI-based and OCP SCC-compliant.
+#
+# StatefulSet vs Deployment:
+#   StatefulSet gives the DB a stable pod identity and manages
+#   ordered pod creation/deletion — important for single-node
+#   DB bootstrapping and data integrity.
+# ============================================================
+---
+# Source: betterthanbot/templates/secret.yaml
+# ============================================================
+# Secret — Database credentials
+# Created whenever a DB engine is configured (in-cluster or
+# external). Values are base64-encoded by Helm automatically
+# when using the `secret` kind with string data.
+#
+# PRODUCTION NOTE: Do not commit real passwords to Git.
+# Supply the password at deploy time:
+#   helm upgrade --install my-webapp . \
+#     --set database.credentials.password=<value>
+# Or use Sealed Secrets / Vault Agent Injector.
+# ============================================================
+---
+# Source: betterthanbot/templates/route.yaml
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: my-web-app-my-webapp
+  name: my-web-app-betterthanbot
   labels:
-    helm.sh/chart: my-webapp-0.1.0
-    app.kubernetes.io/name: my-webapp
+    helm.sh/chart: betterthanbot-0.0.1
+    app.kubernetes.io/name: betterthanbot
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 spec:
-  host: my-webapp.example.com
+  # host: 
   to:
     kind: Service
-    name: my-web-app-my-webapp
+    name: my-web-app-betterthanbot
     weight: 100
   port:
     targetPort: http

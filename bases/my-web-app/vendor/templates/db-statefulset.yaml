@@ -1,0 +1,170 @@
+# ============================================================
+# Database StatefulSet
+# Deploys an in-cluster PostgreSQL or MySQL instance.
+# Both images are Red Hat UBI-based and OCP SCC-compliant.
+#
+# StatefulSet vs Deployment:
+#   StatefulSet gives the DB a stable pod identity and manages
+#   ordered pod creation/deletion — important for single-node
+#   DB bootstrapping and data integrity.
+# ============================================================
+{{- if .Values.database.enabled }}
+
+{{- if eq .Values.database.engine "postgresql" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-db
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  namespace: {{ .Release.Namespace }}
+spec:
+  serviceName: {{ include "my-webapp.fullname" . }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "my-webapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "my-webapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: postgresql
+          image: "{{ .Values.database.postgresql.image }}:{{ .Values.database.postgresql.tag }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: postgresql
+              containerPort: {{ .Values.database.postgresql.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.database.postgresql.resources | nindent 12 }}
+          env:
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-name
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-username
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-password
+          livenessProbe:
+            exec:
+              command:
+                - /usr/libexec/check-container
+                - --live
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - /usr/libexec/check-container
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/pgsql/data
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: {{ include "my-webapp.fullname" . }}-db-postgresql
+{{- end }}
+
+{{- if eq .Values.database.engine "mysql" }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-db
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  namespace: {{ .Release.Namespace }}
+spec:
+  serviceName: {{ include "my-webapp.fullname" . }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "my-webapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "my-webapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: mysql
+          image: "{{ .Values.database.mysql.image }}:{{ .Values.database.mysql.tag }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: mysql
+              containerPort: {{ .Values.database.mysql.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.database.mysql.resources | nindent 12 }}
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-name
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-username
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-password
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-webapp.fullname" . }}-db-secret
+                  key: db-password
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/mysql/data
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: {{ include "my-webapp.fullname" . }}-db-mysql
+{{- end }}
+
+{{- end }}

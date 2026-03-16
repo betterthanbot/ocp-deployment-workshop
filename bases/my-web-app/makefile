@@ -1,5 +1,5 @@
 .PHONY: template save-images pack-images push-images clean
-helm: add fetch deployment
+helm: fetch template build
 
 SYNC_YAML       ?= skopeo.yaml
 SYNC_DIR        ?= ./offline-image-data
@@ -16,6 +16,10 @@ template:
 	--values=values.yaml \
 	vendor/ \
 	> my-web-app.yaml
+
+build: 
+	kustomize build . \
+	> deployable.yaml
 
 # 2. Repo to Disk (Reads the YAML and pulls deduplicated layers)
 save-images:

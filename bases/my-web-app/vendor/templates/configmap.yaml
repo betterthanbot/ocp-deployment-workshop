@@ -1,0 +1,45 @@
+# ============================================================
+# ConfigMap — Application environment variables
+# Non-sensitive config only. Secrets go in secret.yaml.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-config
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+---
+# ============================================================
+# ConfigMap — Default web content + httpd server config
+#
+# index.html: Placeholder page served until real content is
+#   deployed to the PVC. Prevents the httpd 403 that kills
+#   liveness/readiness probes on a fresh empty PVC.
+#
+# servername.conf: Suppresses the AH00558 ServerName warning
+#   by explicitly setting ServerName to the pod's release name.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-www
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head><title>{{ include "my-webapp.fullname" . }}</title></head>
+      <body>
+        <h1>{{ include "my-webapp.fullname" . }}</h1>
+        <p>Application deployed successfully. Replace this page with your content.</p>
+      </body>
+    </html>
+  servername.conf: |
+    ServerName {{ include "my-webapp.fullname" . }}

@@ -1,6 +1,13 @@
 apiVersion: v2
-name: my-webapp
-description: A Helm chart for a basic web application on OpenShift
+name: betterthanbot
+description: A Helm chart for a basic web application on OpenShift 4.x (Apache/httpd + optional PostgreSQL or MySQL)
 type: application
-version: 0.1.0
+version: 0.0.1
 appVersion: "1.0.0"
+keywords:
+  - openshift
+  - httpd
+  - apache
+  - webapp
+  - postgresql
+  - mysql

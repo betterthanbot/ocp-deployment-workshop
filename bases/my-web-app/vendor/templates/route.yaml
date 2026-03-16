@@ -7,7 +7,7 @@ metadata:
     {{- include "my-webapp.labels" . | nindent 4 }}
   namespace: {{ .Release.Namespace }}
 spec:
-  host: {{ .Values.route.hostname }}
+  # host: {{ .Values.route.hostname }}
   to:
     kind: Service
     name: {{ include "my-webapp.fullname" . }}

@@ -8,6 +8,6 @@ resources:
 - ./my-web-app.yaml
 
 images:
-- name: nginx
-  newName: registry.redhat.io/ubi9/nginx-120
-  digest: sha256:395aa7426ca32aa259e536e185f3c72e1147b22fe6be43438c919c63dd5d7809
+- name: registry.access.redhat.com/ubi9/httpd-24
+  newName: registry.access.redhat.com/ubi9/httpd-24
+  digest: sha256:38d71a4cf177f39a2bbe745183009943dbbf404de02aa5f879694aa024a4e6ac
