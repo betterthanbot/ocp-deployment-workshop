@@ -127,8 +127,8 @@ skopeo --version
 `make` glues all the above tools together via the `makefile`.
 
 ```bash
-# macOS — ships with Xcode Command Line Tools
-xcode-select --install
+# macOS
+brew install make
 
 # Linux
 sudo apt install make -y   # Debian / Ubuntu
@@ -369,7 +369,8 @@ The `@sha256:` notation means the cluster will **always** pull the exact image l
 Create the namespace and deploy:
 
 ```bash
-# Create the project (namespace) if it does not exist
+# Create the project (namespace) if it does not exist 
+# <--For workshop users, Skip this step, and use your assigned Project / Namespace.>
 oc new-project my-web-app
 
 # Deploy directly from Kustomize — no intermediate file required
@@ -382,17 +383,17 @@ make deploy
 **Monitor the rollout:**
 ```bash
 # Watch pods come up
-oc get pods -n my-web-app -w
+oc get pods -n <your-assigned-namespace> -w
 
 # Full rollout status
-oc rollout status deployment/my-web-app-betterthanbot-redhat -n my-web-app
+oc rollout status deployment/my-web-app-betterthanbot-redhat -n <your-assigned-namespace>
 ```
 
 **Verify all resources are healthy:**
 ```bash
-oc get all -n my-web-app
-oc get pvc   -n my-web-app
-oc get route -n my-web-app
+oc get all -n <your-assigned-namespace>
+oc get pvc   -n <your-assigned-namespace>
+oc get route -n <your-assigned-namespace>
 ```
 
 **Expected healthy state:**
@@ -660,7 +661,7 @@ To set a custom hostname for a specific environment, add a Route Strategic Merge
 ### Pod stuck in `Pending`
 
 ```bash
-oc describe pod <pod-name> -n my-web-app
+oc describe pod <pod-name> -n <your-assigned-namespace>
 ```
 
 Common causes: no matching StorageClass for the PVC, namespace resource quota exceeded, or image pull failure.
@@ -668,7 +669,7 @@ Common causes: no matching StorageClass for the PVC, namespace resource quota ex
 ### Pod in `CrashLoopBackOff`
 
 ```bash
-oc logs <pod-name> -n my-web-app --previous
+oc logs <pod-name> -n <your-assigned-namespace> --previous
 ```
 
 Check for SCC violations (attempting to run as root), missing ConfigMap references, or health probe failures returning 403.
@@ -684,13 +685,13 @@ grep -A5 "www-defaults" deployable.yaml
 ### `ImagePullBackOff`
 
 ```bash
-oc describe pod <pod-name> -n my-web-app | grep -A5 "Failed"
+oc describe pod <pod-name> -n <your-assigned-namespace> | grep -A5 "Failed"
 ```
 
 For private registries, ensure the pull secret is linked to the service account:
 
 ```bash
-oc secrets link my-web-app-betterthanbot-redhat my-registry-secret --for=pull -n my-web-app
+oc secrets link my-web-app-betterthanbot-redhat my-registry-secret --for=pull -n <your-assigned-namespace>
 ```
 
 ### Overlay patch not applying / wrong name error
@@ -719,7 +720,7 @@ oc apply -k ../../overlay/nonprod/
 ConfigMap volume mounts refresh within ~60 seconds (kubelet sync interval) without a pod restart. If the page is still stale after 2 minutes, force a rollout:
 
 ```bash
-oc rollout restart deployment/my-web-app-betterthanbot-redhat -n my-web-app
+oc rollout restart deployment/my-web-app-betterthanbot-redhat -n <your-assigned-namespace>
 ```
 
 ### vendir: `ref not found`
