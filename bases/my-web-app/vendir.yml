@@ -6,5 +6,4 @@ directories:
       - path: .
         git:
           url: https://github.com/betterthanbot/chart-template.git
-          ref: main
-        # newRootPath: docs/templates/helm/my-web-app
+          ref: 0.0.1

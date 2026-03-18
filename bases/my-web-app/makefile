@@ -17,9 +17,18 @@ template:
 	vendor/ \
 	> my-web-app.yaml
 
+# Check on what kustomize build looks like before deploying
 build: 
 	kustomize build . \
 	> deployable.yaml
+
+# Deploy to the cluster (make sure you have the right context set)
+deploy: 
+	oc create -k .
+
+# Delete from the cluster (make sure you have the right context set)
+delete: 
+	oc delete -k .
 
 # 2. Repo to Disk (Reads the YAML and pulls deduplicated layers)
 save-images:
