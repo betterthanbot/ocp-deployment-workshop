@@ -1,342 +1,616 @@
-# GitOps Architecture — Bases and Overlays with Kustomize (Lowkey needs to be updated)
+# OCP Deployment Workshop
+### Helm + Kustomize + OpenShift 4.x — 101 Guide for New Developers
 
-## Overview
+This workshop walks you through the **full deployment lifecycle** for a containerised web application on OpenShift Container Platform 4.x. You will learn how to:
 
-This repository follows a **Kustomize-based GitOps design** that separates reusable configuration from environment-specific customization.
-
-The primary goal is to create a structure that is:
-
-* Reusable across clusters and environments
-* Easy to maintain and scale
-* Clear for contributors to understand
-* Fully declarative and GitOps friendly
-
-This repository uses two key concepts:
-
-```
-/bases      → Reusable shared configuration
-/overlay    → Environment or cluster-specific customization
-```
-
-Together, these directories allow flexible and scalable deployment patterns using Kustomize.
+- Vendor a Helm chart reproducibly using **vendir**
+- Render Helm templates into static Kubernetes YAML
+- Apply environment-specific overlays using **Kustomize**
+- Mirror container images for disconnected / air-gapped environments using **skopeo**
+- Automate every step with a **Makefile**
+- Deploy to OpenShift using the `oc` CLI
 
 ---
 
-# Why Bases and Overlays Exist
+## Table of Contents
 
-In real-world platform engineering, many clusters share common components such as:
-
-* Monitoring stack
-* Logging stack
-* Operator installation
-* Networking configuration
-* Platform services
-* Standard application frameworks
-
-However, each environment or cluster typically requires:
-
-* Different resource sizes
-* Feature toggles
-* Site-specific configuration
-* Cluster-specific settings
-* Hardware or topology adjustments
-
-Kustomize allows us to combine shared configuration with targeted customization in a clean and maintainable way.
+1. [Prerequisites](#prerequisites)
+2. [Repository Structure](#repository-structure)
+3. [Concepts Overview](#concepts-overview)
+4. [Step-by-Step Deployment Guide](#step-by-step-deployment-guide)
+   - [Step 1 — Fetch the Helm Chart (vendir)](#step-1--fetch-the-helm-chart-vendir)
+   - [Step 2 — Render Helm Templates](#step-2--render-helm-templates)
+   - [Step 3 — Apply Kustomize Overlays](#step-3--apply-kustomize-overlays)
+   - [Step 4 — Deploy to OpenShift](#step-4--deploy-to-openshift)
+5. [Disconnected / Air-Gapped Image Mirroring](#disconnected--air-gapped-image-mirroring)
+6. [Makefile Reference](#makefile-reference)
+7. [Overlay Environments](#overlay-environments)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
-# High-Level Architecture
+## Prerequisites
 
-```mermaid
-flowchart TD
+Before starting, install the following tools on your local machine.
 
-A[ArgoCD Application / ApplicationSet] --> B[Overlay Directory]
-B --> C[Kustomization.yaml]
-C --> D[Bases]
-C --> E[Overlay Patches / Overrides]
-D --> F[Combined Manifest Output]
-E --> F
-F --> G[Cluster Deployment]
+### 1. OpenShift CLI (`oc`)
+
+The `oc` CLI is the primary interface for interacting with your OpenShift cluster.
+
+```bash
+# macOS (Homebrew)
+brew install openshift-cli
+
+# Linux — download from Red Hat mirror
+curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
+tar -xvf openshift-client-linux.tar.gz
+sudo mv oc /usr/local/bin/
+
+# Verify
+oc version
 ```
 
----
+### 2. Helm 3
 
-# Bases Directory
+Helm is the Kubernetes package manager. This workshop uses Helm **only for templating** — not for direct cluster installs.
 
-## Purpose
+```bash
+# macOS
+brew install helm
 
-The `/bases` directory contains **shared reusable configuration** that is intended to be consumed by multiple overlays.
+# Linux
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-Bases represent the standard building blocks of platform or application deployment.
-
----
-
-## Characteristics of Bases
-
-Bases should:
-
-* Be environment-agnostic
-* Contain stable reusable configuration
-* Avoid cluster-specific customization
-* Represent common deployment patterns
-
----
-
-## Example Base Components
-
-```
-bases/
-├ monitoring/
-├ logging/
-├ operators/
-├ storage/
-└ applications/
+# Verify
+helm version
 ```
 
----
+### 3. Kustomize
 
-## Example Base Structure
+Kustomize applies environment-specific patches on top of base Kubernetes YAML without modifying the original files.
 
-```
-bases/monitoring/
-├ kustomization.yaml
-├ prometheus.yaml
-├ grafana.yaml
-```
+```bash
+# macOS
+brew install kustomize
 
-Bases define the default or standard configuration that overlays can reuse.
+# Linux
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+sudo mv kustomize /usr/local/bin/
 
----
-
-# Overlay Directory
-
-## Purpose
-
-The `/overlay` directory contains **environment or cluster-specific configuration** that customizes base components.
-
-Each overlay represents a deployment target such as:
-
-* A specific cluster
-* A specific environment (lab, dev, production)
-* A specific edge or site deployment
-* A specific topology or hardware profile
-
----
-
-## Example Overlay Structure
-
-```
-overlay/
-└── my-sno-cluster/
-    ├── kustomization.yaml
-    ├── patches/
-    ├── config-overrides.yaml
-    └── additional-resources.yaml
+# Verify
+kustomize version
 ```
 
+> **Note:** OpenShift 4.x ships a version of kustomize built into `oc` (`oc kustomize`), but it may lag behind standalone releases. Install the standalone binary for full feature compatibility.
+
+### 4. vendir
+
+`vendir` ("vendor directory") fetches external resources — like Helm charts from Git — and pins them to a specific commit. This ensures your team always uses the exact same chart version.
+
+```bash
+# macOS / Linux
+curl -L https://github.com/carvel-dev/vendir/releases/latest/download/vendir-linux-amd64 -o vendir
+chmod +x vendir
+sudo mv vendir /usr/local/bin/
+
+# macOS (Homebrew via Carvel)
+brew tap carvel-dev/carvel
+brew install vendir
+
+# Verify
+vendir version
+```
+
+### 5. skopeo
+
+`skopeo` copies and inspects container images without requiring a running Docker daemon. It is used in this workshop to mirror images for disconnected environments.
+
+```bash
+# macOS
+brew install skopeo
+
+# RHEL / Fedora / OCP worker nodes
+sudo dnf install skopeo -y
+
+# Ubuntu / Debian
+sudo apt install skopeo -y
+
+# Verify
+skopeo --version
+```
+
+### 6. make
+
+`make` is used to orchestrate all the above tools via the `Makefile`.
+
+```bash
+# macOS — included with Xcode Command Line Tools
+xcode-select --install
+
+# Linux (most distros include it)
+sudo apt install make -y   # Debian/Ubuntu
+sudo dnf install make -y   # RHEL/Fedora
+
+# Verify
+make --version
+```
+
+### Access to an OpenShift Cluster
+
+Log in to your cluster before running any `oc` commands:
+
+```bash
+oc login --token=<your-token> --server=https://api.<cluster-domain>:6443
+
+# Verify your login
+oc whoami
+oc project
+```
+
 ---
 
-# How Bases and Overlays Work Together
+## Repository Structure
 
-Overlays reference bases using Kustomize and apply modifications using patches or additional configuration.
+```
+ocp-deployment-workshop/
+│
+├── bases/
+│   └── my-web-app/
+│       ├── makefile                 # All automation targets live here
+│       ├── vendir.yml               # Declares the Helm chart source (Git repo + ref)
+│       ├── vendir.lock.yml          # Pins the exact Git commit (do not edit manually)
+│       ├── values.yaml              # Helm values — your primary config file
+│       ├── skopeo.yaml              # Image list for air-gapped mirroring
+│       ├── kustomization.yaml       # Base Kustomize config (namespace, image digest pin)
+│       │
+│       ├── vendor/                  # ← Generated by `make fetch` (gitignored)
+│       │   └── <helm chart files>
+│       │
+│       ├── my-web-app.yaml          # ← Generated by `make template` (gitignored)
+│       └── deployable.yaml          # ← Generated by `make build` (gitignored)
+│
+└── overlay/
+    ├── nonprod/
+    │   ├── kustomization.yaml       # Nonprod overlay — references base + secrets + patches
+    │   ├── patches/
+    │   │   └── my-web-app/
+    │   │       └── psm.yaml         # Strategic Merge Patch — e.g. overrides Route hostname
+    │   └── secrets/
+    │       ├── kustomization.yaml
+    │       └── imagePullSecret.yaml # Registry pull secret (fill in your credentials)
+    │
+    └── prod/
+        ├── kustomization.yaml
+        ├── patches/
+        │   └── my-web-app/
+        │       └── psm.yaml         # Production-specific patches
+        └── secrets/
+            ├── kustomization.yaml
+            └── imagePullSecret.yaml
+```
+
+> **Generated files** (`vendor/`, `my-web-app.yaml`, `deployable.yaml`) are produced by the Makefile and should be added to `.gitignore`. They are committed here for reference only.
 
 ---
 
-## Example Overlay kustomization.yaml
+## Concepts Overview
+
+Understanding why each tool exists will help you debug problems and extend this workshop.
+
+### Why vendir instead of `helm repo add`?
+
+`helm repo add` + `helm upgrade --install` installs directly from a remote chart. This is fine for simple cases but creates problems in teams:
+
+- Different developers may get different chart versions
+- There is no local audit trail of what code was actually deployed
+- Air-gapped environments cannot reach the internet
+
+`vendir` solves this by checking out the chart into a `vendor/` directory and locking the exact Git commit in `vendir.lock.yml`. The vendor directory is then treated as local source code.
+
+### Why `helm template` instead of `helm install`?
+
+`helm template` renders the chart to plain Kubernetes YAML **without touching the cluster**. This output is then passed to Kustomize and `oc apply`. Benefits:
+
+- Full visibility into what will be deployed (GitOps-friendly)
+- No Helm tiller / release state stored in the cluster
+- Kustomize can patch the rendered YAML before it reaches the cluster
+
+### Why Kustomize on top of Helm?
+
+Helm `values.yaml` can handle most environment differences, but Kustomize adds capabilities that Helm cannot easily provide:
+
+- **Image digest pinning** — replace a floating tag like `latest` with a specific `sha256` digest in the base `kustomization.yaml`, ensuring every deployment uses the exact same image layer
+- **Strategic Merge Patches** — surgically override any field in any resource without modifying the Helm chart
+- **Namespace injection** — set the target namespace at the Kustomize layer, keeping the Helm chart namespace-agnostic
+- **Secret management** — attach pull secrets and other secrets at the overlay level without embedding them in the Helm chart
+
+---
+
+## Step-by-Step Deployment Guide
+
+All commands below are run from inside `bases/my-web-app/`.
+
+```bash
+cd bases/my-web-app
+```
+
+---
+
+### Step 1 — Fetch the Helm Chart (vendir)
+
+`vendir` reads `vendir.yml` and clones the specified Helm chart into the `vendor/` directory, pinning the commit in `vendir.lock.yml`.
+
+```bash
+make fetch
+# Equivalent to: vendir sync -f vendir.yml
+```
+
+**What happens:**
+
+- `vendir.yml` declares the source — a Git repository and branch/ref
+- vendir checks out the chart into `vendor/`
+- `vendir.lock.yml` is updated with the exact `sha` that was fetched
+
+**Check the result:**
+```bash
+ls vendor/
+# Chart.yaml  README.md  templates/  values.yaml
+```
+
+> **Tip:** To update to the latest chart version, edit `vendir.yml` to point to a new `ref` (branch, tag, or commit SHA) and re-run `make fetch`. Commit both `vendir.yml` and the updated `vendir.lock.yml` so your teammates get the same version.
+
+---
+
+### Step 2 — Render Helm Templates
+
+With the chart vendored locally, render it to a static YAML file using `helm template`. This is a local, offline operation — no cluster access required.
+
+```bash
+make template
+# Equivalent to:
+# helm template my-web-app --values=values.yaml vendor/ > my-web-app.yaml
+```
+
+**What happens:**
+
+- Helm reads `vendor/` (the chart) and `values.yaml` (your config)
+- All `{{ .Values.* }}` template expressions are resolved
+- The output is written to `my-web-app.yaml` — a plain Kubernetes manifest
+
+**Inspect the output:**
+```bash
+cat my-web-app.yaml
+# You will see: ServiceAccount, ConfigMap, PVC, Service, Deployment, Route
+```
+
+> **Tip:** To customise the application (replica count, resource limits, route hostname, etc.), edit `values.yaml` and re-run `make template`. The rendered YAML will reflect your changes.
+
+---
+
+### Step 3 — Apply Kustomize Overlays
+
+Kustomize takes `my-web-app.yaml` as its input (via the base `kustomization.yaml`) and applies overlays before producing the final `deployable.yaml`.
+
+```bash
+make build
+# Equivalent to: kustomize build . > deployable.yaml
+```
+
+**What the base `kustomization.yaml` does:**
+
+- Sets the **namespace** to `my-web-app` on all resources
+- **Pins the image digest** — replaces the floating `latest` tag with a specific `sha256` digest, guaranteeing immutability:
 
 ```yaml
-resources:
-  - ../../bases/monitoring
-  - ../../bases/operators
+images:
+- name: registry.access.redhat.com/ubi9/httpd-24
+  newName: registry.access.redhat.com/ubi9/httpd-24
+  digest: sha256:38d71a4cf177f39a2bbe745183009943dbbf404de02aa5f879694aa024a4e6ac
+```
 
-patchesStrategicMerge:
-  - patches/grafana-size.yaml
-  - patches/prometheus-storage.yaml
+**Inspect the final output:**
+```bash
+cat deployable.yaml
+# Notice: namespace is now my-web-app, image reference uses @sha256:...
+```
+
+#### Using Environment Overlays (nonprod / prod)
+
+To build with an environment-specific overlay instead of the base:
+
+```bash
+# From the repo root
+kustomize build overlay/nonprod/ > deployable-nonprod.yaml
+kustomize build overlay/prod/    > deployable-prod.yaml
+```
+
+The overlay `kustomization.yaml` references the base and adds:
+- Environment secrets (image pull secret)
+- Strategic Merge Patches (e.g. Route hostname overrides via `psm.yaml`)
+
+---
+
+### Step 4 — Deploy to OpenShift
+
+Once `deployable.yaml` is ready, apply it to your cluster.
+
+```bash
+# Create the namespace first (if it does not exist)
+oc new-project my-web-app
+
+# Apply the full manifest
+oc apply -f deployable.yaml
+
+# Watch the rollout
+oc rollout status deployment/my-web-app-betterthanbot -n my-web-app
+```
+
+**Verify everything is running:**
+
+```bash
+# Check pods
+oc get pods -n my-web-app
+
+# Check the Route (your public URL)
+oc get route -n my-web-app
+
+# Check PVCs are bound
+oc get pvc -n my-web-app
+
+# View pod logs
+oc logs -l app.kubernetes.io/instance=my-web-app -n my-web-app
+```
+
+**Expected output — healthy pod:**
+```
+NAME                                    READY   STATUS    RESTARTS
+my-web-app-betterthanbot-xxxxx-xxxxx    1/1     Running   0
+```
+
+**Expected Route output:**
+```
+NAME                       HOST/PORT
+my-web-app-betterthanbot   my-web-app-betterthanbot-my-web-app.apps.<cluster-domain>
+```
+
+Open the HOST/PORT URL in your browser. You should see the placeholder landing page.
+
+---
+
+## Disconnected / Air-Gapped Image Mirroring
+
+If your OpenShift cluster cannot reach the internet, you need to mirror all container images to an internal registry before deploying. The Makefile provides a full 3-step pipeline for this.
+
+### The Image List — `skopeo.yaml`
+
+`skopeo.yaml` declares every image that needs to be mirrored:
+
+```yaml
+registry.redhat.io:
+  images:
+    ubi9/httpd-24:
+      - sha256:38d71a4cf177f39a2bbe745183009943dbbf404de02aa5f879694aa024a4e6ac
+
+quay.io:
+  images:
+    prometheus/node-exporter:
+      - v1.6.1
+```
+
+Always use **digest pinning** (`sha256:...`) for production mirrors — a tag like `latest` can be reassigned at any time, making your mirror unreproducible.
+
+---
+
+### Step A — Sync Images from Registry to Local Disk
+
+Run this on a machine that has internet access:
+
+```bash
+make save-images
+# Equivalent to:
+# mkdir -p ./offline-image-data
+# skopeo sync --src yaml --dest dir skopeo.yaml ./offline-image-data
+```
+
+This downloads all image layers into the `offline-image-data/` directory. skopeo deduplicates shared layers, so the disk usage is typically much smaller than a naive `docker pull`.
+
+---
+
+### Step B — Pack Images into a Tarball
+
+```bash
+make pack-images
+# Equivalent to: tar -czvf offline-images.tar.gz ./offline-image-data
+```
+
+Transfer `offline-images.tar.gz` to the disconnected environment (USB drive, secure file transfer, etc.).
+
+---
+
+### Step C — Push Images to Internal Mirror Registry
+
+Run this inside the disconnected environment after extracting the tarball:
+
+```bash
+tar -xzvf offline-images.tar.gz
+
+make push-images MIRROR_REGISTRY=registry.disconnected.local:5000/my-project
+# Equivalent to:
+# skopeo sync \
+#   --src dir \
+#   --dest docker \
+#   --dest-tls-verify=false \
+#   ./offline-image-data \
+#   registry.disconnected.local:5000/my-project
+```
+
+Override `MIRROR_REGISTRY` to match your environment:
+
+```bash
+make push-images MIRROR_REGISTRY=my-internal-registry.corp.com:5000/ocp-workshop
 ```
 
 ---
 
-## Deployment Flow
+### Update the Image Reference After Mirroring
 
-```mermaid
-flowchart LR
+After pushing to your mirror, update the image in `kustomization.yaml` to point to the internal registry:
 
-A[Bases] --> C[Kustomize Build]
-B[Overlay Customizations] --> C
-C --> D[Final Deployment Manifests]
-D --> E[Applied to Cluster]
+```yaml
+images:
+- name: registry.access.redhat.com/ubi9/httpd-24
+  newName: registry.disconnected.local:5000/my-project/ubi9/httpd-24
+  digest: sha256:38d71a4cf177f39a2bbe745183009943dbbf404de02aa5f879694aa024a4e6ac
+```
+
+Then re-run `make build` and re-deploy.
+
+---
+
+## Makefile Reference
+
+All targets are defined in `bases/my-web-app/makefile`.
+
+| Target | Description |
+|--------|-------------|
+| `make fetch` | Vendor the Helm chart from Git using vendir |
+| `make template` | Render Helm chart → `my-web-app.yaml` |
+| `make build` | Apply Kustomize overlays → `deployable.yaml` |
+| `make helm` | Runs `fetch` + `template` + `build` in one shot |
+| `make save-images` | Mirror images from registry to local disk |
+| `make pack-images` | Compress local image dir to `offline-images.tar.gz` |
+| `make push-images` | Push local images to mirror registry |
+| `make clean` | Remove generated files and image cache |
+
+**Configurable variables** (override on the command line):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SYNC_YAML` | `skopeo.yaml` | Image list file for skopeo |
+| `SYNC_DIR` | `./offline-image-data` | Local directory for mirrored images |
+| `TAR_FILE` | `offline-images.tar.gz` | Output tarball name |
+| `MIRROR_REGISTRY` | `registry.disconnected.local:5000/my-project` | Target mirror registry |
+
+**Example — full run with custom registry:**
+```bash
+make helm
+make pack-images SYNC_DIR=./images TAR_FILE=my-images.tar.gz
 ```
 
 ---
 
-# What Happens During Deployment
+## Overlay Environments
 
-1. Argo CD targets an overlay directory.
-2. Kustomize processes the overlay `kustomization.yaml`.
-3. Overlay references required bases.
-4. Overlay applies patches and customizations.
-5. Kustomize generates final manifests.
-6. Argo CD applies rendered resources to the cluster.
+The `overlay/` directory contains environment-specific configuration that is applied on top of the base without modifying it.
 
----
-
-# Example Real-World Workflow
-
-## Shared Monitoring Configuration
+### How overlays work
 
 ```
-bases/monitoring
+overlay/nonprod/kustomization.yaml
+  └── resources:
+      ├── ../../bases/my-web-app/    ← base manifests
+      └── ./secrets/                 ← pull secret
+  └── patches:
+      └── ./patches/my-web-app/psm.yaml  ← Strategic Merge Patch
 ```
 
-Contains:
+### Customising the Route hostname per environment
 
-* Grafana deployment
-* Prometheus configuration
-* Default dashboards
-* Standard alert rules
+Edit `overlay/<env>/patches/my-web-app/psm.yaml`:
 
----
-
-## Cluster-Specific Monitoring Customization
-
-```
-overlay/my-sno-cluster
-```
-
-May customize:
-
-* Storage size
-* Retention policies
-* Resource limits
-* Site-specific dashboards
-
----
-
-# Why This Design Is Powerful
-
-## Reusability
-
-Multiple clusters can share base components without duplicating configuration.
-
----
-
-## Maintainability
-
-Updates to shared configuration only need to occur once in the base.
-
----
-
-## Scalability
-
-New clusters or environments can be created by adding overlays.
-
----
-
-## Consistency
-
-Ensures standardized platform deployments across environments.
-
----
-
-# Typical Deployment Layering
-
-```mermaid
-flowchart TD
-
-A[Bootstrap GitOps Initialization]
-   ↓
-B[ArgoCD Platform Configuration]
-   ↓
-C[Application / ApplicationSet]
-   ↓
-D[Overlay Directory]
-   ↓
-E[Bases + Overlay Customization]
-   ↓
-F[Cluster Deployment]
+```yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: my-web-app-betterthanbot
+  namespace: my-web-app
+spec:
+  host: myapp.nonprod.example.com    # ← change this per environment
 ```
 
----
-
-# Best Practices
-
-## Bases
-
-* Keep them generic and reusable
-* Avoid environment-specific configuration
-* Maintain stable interfaces for overlays
-
----
-
-## Overlays
-
-* Keep customization minimal and targeted
-* Document purpose clearly
-* Avoid duplicating base logic
-* Use patches instead of copying resources
-
----
-
-# Naming Strategy
-
-Overlays should clearly represent deployment targets.
-
-Examples:
-
+For OpenShift to auto-assign a hostname (recommended for lab/sandbox clusters), remove the `host:` line entirely. OCP will generate:
 ```
-overlay/
-├ sno-lab-cluster
-├ sno-edge-site-a
-├ production-regional-cluster
+<route-name>-<namespace>.apps.<cluster-domain>
+```
+
+### Configuring the Image Pull Secret
+
+Edit `overlay/<env>/secrets/imagePullSecret.yaml` and replace the placeholder with your base64-encoded Docker config:
+
+```bash
+# Generate the base64 value
+cat ~/.docker/config.json | base64 -w 0
+```
+
+Then paste the output into the `data..dockerconfigjson` field:
+
+```yaml
+data:
+  .dockerconfigjson: <your-base64-value-here>
+```
+
+> **Security note:** Never commit real credentials to Git. In production, use OpenShift Secrets management, Sealed Secrets, or HashiCorp Vault.
+
+---
+
+## Troubleshooting
+
+### Pod stuck in `Pending`
+
+```bash
+oc describe pod <pod-name> -n my-web-app
+```
+
+Common causes: PVC not bound (no matching StorageClass), resource quota exceeded, image pull failure.
+
+### Pod in `CrashLoopBackOff`
+
+```bash
+oc logs <pod-name> -n my-web-app --previous
+```
+
+Check for SCC violations (root user attempt), missing ConfigMap references, or probe failures.
+
+### Image pull error (`ImagePullBackOff`)
+
+```bash
+oc describe pod <pod-name> -n my-web-app | grep -A5 "Failed"
+```
+
+Ensure the image pull secret is correctly configured and linked to the service account:
+
+```bash
+oc secrets link my-web-app-betterthanbot my-registry-secret --for=pull -n my-web-app
+```
+
+### `No "apiVersion" field found` error from Kustomize
+
+This means a YAML document separator (`---`) is rendering an empty document. Check your Kustomize templates for bare `---` separators outside conditional blocks.
+
+### Route not reachable
+
+```bash
+oc get route -n my-web-app
+oc describe route my-web-app-betterthanbot -n my-web-app
+```
+
+Ensure TLS termination matches your cluster's ingress configuration. For lab clusters, `edge` termination is standard.
+
+### vendir: `ref not found`
+
+The Git ref in `vendir.yml` does not exist in the remote repo. Check the branch or commit SHA:
+
+```bash
+git ls-remote https://github.com/betterthanbot/chart-template.git
 ```
 
 ---
 
-# Adding a New Cluster or Environment
+## Further Reading
 
-To deploy a new cluster configuration:
-
-1. Create a new overlay directory
-2. Reference required bases
-3. Add environment-specific patches
-4. Update Argo CD Application or ApplicationSet
-5. Submit changes via Pull Request
-
----
-
-# Troubleshooting Tips
-
-If deployment fails:
-
-* Validate overlay `kustomization.yaml`
-* Confirm base paths are correct
-* Review patch syntax
-* Inspect rendered manifests in Argo CD
-* Confirm RBAC permissions allow resource creation
-
----
-
-# Disaster Recovery Benefits
-
-Because both bases and overlays are stored in Git:
-
-Clusters can be fully recreated by:
-
-1. Installing GitOps platform
-2. Reapplying bootstrap
-3. Argo CD redeploys overlays
-4. Kustomize rebuilds full configuration automatically
-
----
-
-# Summary
-
-This repository uses a layered Kustomize approach where:
-
-* `/bases` provide reusable shared configuration
-* `/overlay` customizes configuration for specific environments or clusters
-* Argo CD deploys overlays which combine both layers into final cluster resources
-
-This architecture supports scalable, consistent, and maintainable GitOps-driven platform engineering.
-
----
+- [Helm Documentation](https://helm.sh/docs/)
+- [Kustomize Documentation](https://kustomize.io/)
+- [vendir Documentation](https://carvel.dev/vendir/)
+- [skopeo Documentation](https://github.com/containers/skopeo)
+- [OpenShift CLI Reference](https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html)
+- [OCP Security Context Constraints](https://docs.openshift.com/container-platform/latest/authentication/managing-security-context-constraints.html)
