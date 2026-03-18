@@ -22,8 +22,7 @@ This workshop walks you through the **full deployment lifecycle** for a containe
    - [Step 2 — Render Helm Templates](#step-2--render-helm-templates)
    - [Step 3 — Build with Kustomize](#step-3--build-with-kustomize)
    - [Step 4 — Deploy to OpenShift](#step-4--deploy-to-openshift)
-   - [Step 5 — Apply an Environment Overlay](#step-5--apply-an-environment-overlay)
-   - [Step 6 — Tear Down](#step-6--tear-down)
+   - [Step 5 — Tear Down](#step-5--tear-down)
 5. [Understanding the Overlay — The Workshop Challenge](#understanding-the-overlay--the-workshop-challenge)
 6. [Disconnected / Air-Gapped Image Mirroring](#disconnected--air-gapped-image-mirroring)
 7. [Makefile Reference](#makefile-reference)
@@ -411,36 +410,7 @@ Open the Route URL in your browser. You should see the Apache placeholder page �
 
 ---
 
-### Step 5 — Apply an Environment Overlay
-
-This is the **core of the workshop challenge**. Each overlay uses a Kustomize Strategic Merge Patch to replace the `index.html` served by Apache — without touching any base file.
-
-**Preview the nonprod overlay:**
-```bash
-# From the repo root
-kustomize build overlay/nonprod/
-```
-
-You will see the `my-web-app-betterthanbot-redhat-www` ConfigMap's `index.html` has been replaced with the overlay's content.
-
-**Deploy the nonprod overlay:**
-```bash
-# From the repo root
-oc apply -k overlay/nonprod/
-```
-
-Refresh your browser — the page updates within ~60 seconds (Kubernetes ConfigMap volume sync interval). The pod does **not** restart.
-
-**Switch to the prod overlay:**
-```bash
-oc apply -k overlay/prod/
-```
-
-Refresh again to see the prod version of the page.
-
----
-
-### Step 6 — Tear Down
+### Step 5 — Tear Down
 
 Remove all resources created in the base directory:
 
@@ -455,64 +425,6 @@ Or delete the entire namespace to remove everything at once:
 ```bash
 oc delete project my-web-app
 ```
-
----
-
-## Understanding the Overlay — The Workshop Challenge
-
-The overlays in this repo demonstrate one of Kustomize's most powerful patterns: **replacing content in a base resource without forking it**.
-
-### How the patch works
-
-The base `configmap.yaml` template creates two ConfigMaps:
-
-- `<release>-config` — app environment variables (`APP_ENV`, `LOG_LEVEL`)
-- `<release>-www` — the default `index.html` and `servername.conf` served by Apache
-
-The overlay `psm.yaml` is a **Strategic Merge Patch** that targets the `<release>-www` ConfigMap by its exact name:
-
-```yaml
-# overlay/nonprod/patches/my-web-app/psm.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: my-web-app-betterthanbot-redhat-www   # must match the base resource exactly
-  namespace: default
-data:
-  index.html: |
-    <!DOCTYPE html>
-    ... your custom HTML here ...
-```
-
-Kustomize matches this patch by `apiVersion + kind + metadata.name` and **merges** the `data` block — replacing `index.html` while leaving `servername.conf` untouched.
-
-### Important: the metadata.name must match exactly
-
-The patch `metadata.name` must be identical to the resource name produced by `helm template`. If you change the Helm release name or chart name, you must update the patch name to match.
-
-```bash
-# Find the exact ConfigMap name from your rendered output
-grep "betterthanbot-redhat-www" my-web-app.yaml
-```
-
-### Why this pattern matters
-
-Without Kustomize, customising per-environment content would require either:
-- Multiple copies of the Helm values file with full HTML content embedded
-- A post-deploy script that `oc exec`s into the pod and writes files manually
-
-The Kustomize SMP approach keeps the base clean, puts all per-environment content in the overlay where it belongs, and is fully declarative — every state is version-controlled in Git.
-
-### The nonprod vs prod overlay pages
-
-| | `overlay/nonprod` | `overlay/prod` |
-|---|---|---|
-| Visual style | Dark gold / elegant serif | Colourful / playful food theme |
-| Fonts | Playfair Display + DM Sans | Fredoka One + Nunito |
-| Animation | Canvas confetti + sparkles | Floating food emojis |
-| Message | "Now we wait for lunch!" | "Challenge Complete!" |
-
-Both patches target the same ConfigMap key (`index.html`). Applying one overlay after the other simply updates the ConfigMap — Kubernetes reconciles the change automatically without restarting the pod.
 
 ---
 
