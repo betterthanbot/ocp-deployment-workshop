@@ -366,10 +366,10 @@ The `@sha256:` notation means the cluster will **always** pull the exact image l
 ### Step 4 — Deploy to OpenShift
 
 Create the namespace and deploy:
+!For workshop users, Skip `oc new-project xxx`, and use your assigned Project / Namespace.
 
 ```bash
-# Create the project (namespace) if it does not exist 
-# <--For workshop users, Skip this step, and use your assigned Project / Namespace.>
+# Create the project (namespace) if it does not exist. 
 oc new-project my-web-app
 
 # Deploy directly from Kustomize — no intermediate file required
