@@ -60,3 +60,4 @@ node_modules/
 *.retry
 *.bak
 *.orig
+deployable.yaml

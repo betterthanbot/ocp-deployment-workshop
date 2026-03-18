@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: my-web-app-betterthanbot-www # This may be change to match the existing resource in bases/my-web-app/my-web-app.yaml
+  name: my-web-app-betterthanbot-redhat-www # This may be change to match the existing resource in bases/my-web-app/my-web-app.yaml
   namespace: default # This may be change to match the existing resource in bases/my-web-app/my-web-app.yaml
 data:
   index.html: |
