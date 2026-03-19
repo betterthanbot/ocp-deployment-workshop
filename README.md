@@ -43,6 +43,9 @@ The primary interface for interacting with your OpenShift cluster. Also provides
 # macOS (Homebrew)
 brew install openshift-cli
 
+# Windows (Winget)
+winget install RedHat.OpenShiftCLI
+
 # Linux — download from Red Hat mirror
 curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
 tar -xvf openshift-client-linux.tar.gz
@@ -57,8 +60,11 @@ oc version
 In this workshop Helm is used **only for templating** — it never talks to your cluster directly.
 
 ```bash
-# macOS
+# macOS (Homebrew)
 brew install helm
+
+# Windows (Winget)
+winget install Helm.Helm
 
 # Linux
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -72,8 +78,11 @@ helm version
 Kustomize layers environment-specific patches on top of base Kubernetes YAML without ever touching the originals.
 
 ```bash
-# macOS
+# macOS (Homebrew)
 brew install kustomize
+
+# Windows (Winget)
+winget install Kubernetes.kustomize
 
 # Linux
 curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
@@ -94,6 +103,11 @@ kustomize version
 brew tap carvel-dev/carvel
 brew install vendir
 
+# Windows (PowerShell)
+Invoke-WebRequest -Uri "https://github.com/carvel-dev/vendir/releases/latest/download/vendir-windows-amd64.exe" -OutFile "vendir.exe"
+# Move to a directory in your PATH, e.g., C:\Windows\System32
+Move-Item -Path "vendir.exe" -Destination "C:\Windows\System32\vendir.exe"
+
 # Linux
 curl -L https://github.com/carvel-dev/vendir/releases/latest/download/vendir-linux-amd64 -o vendir
 chmod +x vendir
@@ -108,8 +122,13 @@ vendir version
 `skopeo` copies and inspects container images without a running Docker daemon. Used in this workshop to mirror images into offline / air-gapped environments.
 
 ```bash
-# macOS
+# macOS (Homebrew)
 brew install skopeo
+
+# Windows (via WSL - Windows Subsystem for Linux)
+wsl --install
+# After reboot, open your WSL terminal and run:
+sudo apt update && sudo apt install skopeo -y
 
 # RHEL / Fedora
 sudo dnf install skopeo -y
@@ -126,8 +145,12 @@ skopeo --version
 `make` glues all the above tools together via the `makefile`.
 
 ```bash
-# macOS
+# macOS (Homebrew)
 brew install make
+
+# Windows (Chocolatey)
+choco install make
+# Or via Winget: winget install GnuWin32.Make
 
 # Linux
 sudo apt install make -y   # Debian / Ubuntu
