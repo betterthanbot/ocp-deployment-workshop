@@ -268,7 +268,15 @@ The `make deploy` target uses `oc create -k .` which tells `oc` to run Kustomize
 All commands are run from inside `bases/my-web-app/` unless noted otherwise.
 
 ```bash
+git clone https://github.com/betterthanbot/ocp-deployment-workshop.git
 cd bases/my-web-app
+```
+
+Navigate to OCP console page, on the right, click on your username > copy login command 
+Apply token in your on your terminal or VScode
+
+```bash
+oc login --token=sha256~xxx --server=https://api.cluster-xxx.com:6443
 ```
 
 ---
