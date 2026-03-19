@@ -46,29 +46,54 @@ Work through the sections in order. Each section has its own README with step-by
 
 ## The ParksMap application
 
-The application consists of three components:
+The application consists of three components wired together through OpenShift Routes, Services, and Deployments:
 
 ```
-                        +------------------+
-    Browser --HTTPS-->  |   parksmap       |  (Route: edge TLS)
-                        |   (frontend)     |
-                        +--------+---------+
-                                 |  Service discovery via
-                                 |  label: type=parksmap-backend
-                                 v
-                        +------------------+
-                        |  nationalparks   |  (Route: edge TLS + redirect)
-                        |   (backend)      |
-                        +--------+---------+
-                                 |  MONGODB_SERVER_HOST
-                                 v
-                        +------------------+
-                        |    mongodb       |  (ClusterIP only)
-                        |   (database)     |
-                        +------------------+
+  External traffic (browser)
+  |
+  |   HTTPS
+  v
++--------------------------------------------------+
+|  OpenShift Router (HAProxy)                      |
++----+------------------------+--------------------+
+     |                        |
+     | Route: parksmap        | Route: nationalparks
+     | (edge TLS)             | (edge TLS + redirect)
+     v                        v
++-----------+           +-----------+
+| Service   |           | Service   |
+| parksmap  |           | national- |
+| :8080     |           | parks     |
+|           |           | :8080     |
++-----+-----+           | label:    |
+      |                 | type=     |
+      |                 | parksmap- |
+      |                 | backend   |
+      |                 +-----+-----+
+      v                       v
++-----------+           +-----------+         +-----------+
+| Deploy    |  label    | Deploy    |         | Service   |
+| parksmap  |  lookup   | national- |  DNS    | mongodb   |
+| (frontend)|---------->| parks     |-------->| :27017    |
+| Pod(s)    |           | (backend) |         | ClusterIP |
++-----------+           | Pod(s)    |         +-----+-----+
+                        +-----------+               |
+                                                    v
+                                              +-----------+
+                                              | Deploy    |
+                                              | mongodb   |
+                                              | (database)|
+                                              | Pod(s)    |
+                                              +-----------+
 ```
 
-The frontend discovers backends by querying the Kubernetes API for Services with the label `type: parksmap-backend`. This is why the `view` RoleBinding is required.
+**How the pieces connect:**
+
+- The browser hits the OpenShift Router, which terminates TLS and forwards traffic to the matching Service based on the Route hostname.
+- Each Service selects pods using label selectors (e.g., `app: parksmap`, `deployment: parksmap`).
+- The parksmap frontend discovers backends by querying the Kubernetes API for Services labelled `type: parksmap-backend`.
+- The nationalparks backend connects to MongoDB using the Service DNS name (`mongodb`) passed via the `MONGODB_SERVER_HOST` environment variable.
+- MongoDB has no Route because it should only be reachable from within the cluster.
 
 ## Dev vs SIT environments
 
@@ -78,7 +103,7 @@ Throughout the workshop, you will deploy to two environments:
 |--------|-----|-----|
 | Purpose | Rapid testing and iteration | Stable integration testing |
 | Namespace | `userN-dev` | `userN-sit` |
-| Image tags | `latest` (always pull newest) | Pinned version (e.g., `1.3.0`) |
+| Frontend image | `quay.io/openshift-roadshow/parksmap:latest` | `docker.io/iogk/parksmap:1.0-sit` |
 | Replicas | 1 per component | 2 for frontend and backend |
 | Resource limits | Relaxed | Strict |
 | Map legend label | "National Parks (DEV)" | "National Parks (SIT)" |
