@@ -355,6 +355,106 @@ When you have a docker-compose.yaml and need to create a Helm chart, work throug
 
 ---
 
+## Step 7: Automating the conversion with Katenary
+
+Manually converting a docker-compose.yaml works well for small stacks, but for larger applications with many services, it gets tedious. [Katenary](https://github.com/katenary/katenary) is an open-source tool that automates this conversion. It reads a Compose file and generates a Helm chart with Deployments, Services, Secrets, and ConfigMaps.
+
+### Installing Katenary
+
+On Linux or macOS, you can install it with:
+
+```bash
+sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
+```
+
+Or if you have Go installed:
+
+```bash
+go install katenary.io/cmd@latest
+```
+
+Verify the installation:
+
+```bash
+katenary version
+```
+
+### Running Katenary against the ParksMap compose file
+
+From the `bonus-compose-migration/` folder, run:
+
+```bash
+katenary convert -c docker-compose.yaml -o ./katenary-output
+```
+
+This generates a Helm chart in the `katenary-output/` directory. Take a look at what it produced:
+
+```bash
+find katenary-output/ -type f
+```
+
+You will see that Katenary generated Deployments, Services, and a `values.yaml` file for each Compose service. It also extracted environment variables into ConfigMaps or Secrets.
+
+### What Katenary gets right
+
+- Deployment and Service creation for each Compose service
+- Port mapping from Compose to container ports and Service ports
+- Environment variable extraction into ConfigMaps
+- Volume mount generation
+- Basic `values.yaml` structure with parameterized values
+
+### What you still need to do manually for OpenShift
+
+Katenary generates a standard Kubernetes Helm chart, but it does not handle OpenShift-specific requirements. After running Katenary, you would still need to:
+
+1. **Add Routes** instead of Ingress resources. Katenary generates Ingress (vanilla Kubernetes), which OpenShift supports but Routes are the native approach with better integration.
+
+2. **Add a proper SecurityContext.** Katenary does not add `restricted-v2` SCC-compliant security contexts. You need to add `runAsNonRoot: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, and `seccompProfile: RuntimeDefault` to every container.
+
+3. **Move passwords to Secrets.** Katenary may put some environment variables into ConfigMaps rather than Secrets. Any credential should be in a Secret with `stringData`, not a ConfigMap.
+
+4. **Add health probes.** Katenary does not always generate liveness and readiness probes, even if the Compose file has `healthcheck` entries. You need to add these manually.
+
+5. **Add resource requests and limits.** Katenary may not convert `deploy.resources` from Compose into Kubernetes resource specs. OpenShift clusters with ResourceQuotas will reject pods without limits.
+
+6. **Review labels and selectors.** Katenary generates its own labelling scheme. You may want to adjust it to match your team's conventions or to support label-based service discovery (like the `type: parksmap-backend` label).
+
+### Using Katenary labels for better output
+
+Katenary supports special labels in the Compose file that guide the conversion. For example, you can annotate your `docker-compose.yaml` to tell Katenary which ports are internal, which environment variables are secrets, and how services connect:
+
+```yaml
+services:
+  nationalparks:
+    image: quay.io/openshift-roadshow/nationalparks:latest
+    environment:
+      MONGODB_SERVER_HOST: mongodb
+      MONGODB_USER: parksapp
+      MONGODB_PASSWORD: keepsafe
+    labels:
+      # Tell Katenary these env vars are secrets
+      katenary.v3/secrets: |-
+        - MONGODB_PASSWORD
+      # Tell Katenary to remap the host reference
+      katenary.v3/map-env: |-
+        MONGODB_SERVER_HOST: '{{ .Release.Name }}-mongodb'
+```
+
+This produces a cleaner chart where passwords end up in Kubernetes Secrets and service hostnames use Helm release-aware references. See the [Katenary documentation](https://github.com/katenary/katenary) for the full list of supported labels.
+
+### When to use Katenary vs manual conversion
+
+| Scenario | Recommendation |
+|----------|---------------|
+| Small stack (2-3 services) | Manual conversion is faster and gives you full control |
+| Large stack (10+ services) | Use Katenary for the initial scaffold, then review and adjust |
+| Learning Helm for the first time | Do it manually first (like you did in Part 1) so you understand the mapping |
+| Production migration | Use Katenary as a starting point, then heavily review and add OCP-specific resources |
+
+The key takeaway is that Katenary saves time on the mechanical parts of conversion (creating Deployment/Service boilerplate), but you still need to understand the concepts to review and harden its output for production use on OpenShift.
+
+---
+
 ## Exercise: Convert it yourself
 
 If you have time, try this exercise. Take the `docker-compose.yaml` in this folder and convert it into a minimal Helm chart without looking at the `solutions/` folder or the Part 1 exercises.
