@@ -44,7 +44,7 @@ The primary interface for interacting with your OpenShift cluster. Also provides
 brew install openshift-cli
 
 # Windows (Winget)
-winget install RedHat.OpenShiftCLI
+winget install -e --id RedHat.OpenShift-Client
 
 # Linux — download from Red Hat mirror
 curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
