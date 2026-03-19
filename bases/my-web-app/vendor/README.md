@@ -1,1 +1,0 @@
-# my-web-app Helm Chart — v0.0.1
