@@ -46,6 +46,8 @@ cd 01-helm-foundations
 
 Take a few minutes to explore the files. Look at `Chart.yaml`, `values.yaml`, and the `templates/` folder. Notice that some template files have `# TODO` comments, and some files that you would expect (like `frontend-service.yaml`) do not exist yet.
 
+> **Note on `helm create`**: If you have used Helm before, you might wonder why we are not starting with `helm create mychart`. That command generates a massive amount of complicated boilerplate (Ingress, ServiceAccounts, HPAs) which is overwhelming when learning. We provide a clean, simplified skeleton here so you focus only on the core concepts.
+
 ---
 
 ## Exercise 1: Understand the chart structure

@@ -457,9 +457,12 @@ The key takeaway is that Katenary saves time on the mechanical parts of conversi
 
 ## Exercise: Convert it yourself
 
-If you have time, try this exercise. Take the `docker-compose.yaml` in this folder and convert it into a minimal Helm chart without looking at the `solutions/` folder or the Part 1 exercises.
+If you have time, try this exercise. Take the `docker-compose.yaml` in this folder and convert it into a minimal Helm chart without looking at the `solutions/` folder or the Part 1 exercises. Follow this approach:
 
-Create a new folder called `bonus-chart/` and try to produce:
+1. **Do it manually first**: Work through the 10-step checklist above and create the files yourself. This builds the mental muscle.
+2. **Verify with Katenary**: Once you finish, run `katenary convert -c docker-compose.yaml -o katenary-check` and compare your manual chart with what the tool generated.
+
+Create a new folder called `bonus-chart/` for your manual work, and try to produce:
 
 1. `Chart.yaml`
 2. `templates/database-deploy.yaml`

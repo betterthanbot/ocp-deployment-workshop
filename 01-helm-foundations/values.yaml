@@ -43,8 +43,6 @@ backend:
 
   port: 8080
 
-  appName: "National Parks"
-
   resources:
     requests:
       cpu: 10m

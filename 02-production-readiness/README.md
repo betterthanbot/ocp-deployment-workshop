@@ -75,7 +75,9 @@ Now check `values-dev.yaml` and look for a `namespace` key. What value does it h
 <details>
 <summary>Nudge</summary>
 
-The chart has a `namespace` field in `values-dev.yaml` that overrides the `--namespace` flag. Look at the `_helpers.tpl` file to see how the namespace is resolved -- the values file takes precedence over the release namespace. The values file has a hardcoded namespace `userx-dev` which does not match your actual namespace.
+The chart has a `namespace` field in `values-dev.yaml` that overrides the `--namespace` flag. Look at the `_helpers.tpl` file to see how the namespace is resolved -- the values file takes precedence over the release namespace. 
+
+Note that `values.yaml` (the base defaults) *also* has `namespace: "userx-dev"`. However, when you run `helm install -f values-dev.yaml`, any settings in `values-dev.yaml` merge with and override the base `values.yaml`. You only need to fix the value in `values-dev.yaml`.
 
 </details>
 
