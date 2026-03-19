@@ -1,13 +1,18 @@
 apiVersion: v2
-name: betterthanbot-redhat
-description: A Helm chart for a basic web application on OpenShift 4.x (Apache/httpd + optional PostgreSQL or MySQL)
+name: parksmap
+description: >
+  Helm chart for the ParksMap workshop application.
+  Deploys a Spring Boot nationalparks backend, a parksmap frontend,
+  and a MongoDB database on OpenShift.
 type: application
-version: 0.0.1
+version: 0.1.0
 appVersion: "1.0.0"
 keywords:
+  - parksmap
+  - nationalparks
+  - mongodb
   - openshift
-  - httpd
-  - apache
-  - webapp
-  - postgresql
-  - mysql
+sources:
+  - https://github.com/openshift-roadshow/nationalparks
+maintainers:
+  - name: workshop-team

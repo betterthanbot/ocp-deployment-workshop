@@ -1,0 +1,123 @@
+# ──────────────────────────────────────────────
+# Global
+# ──────────────────────────────────────────────
+global:
+  # Top-level label applied to all resources (app.kubernetes.io/part-of)
+  partOf: workshop
+
+namespace: "user1-sit"
+
+# ──────────────────────────────────────────────
+# Frontend  (parksmap)
+# ──────────────────────────────────────────────
+frontend:
+  replicaCount: 1
+
+  image:
+    # Override with your registry path; tag or digest can be used
+    repository: quay.io/openshift-roadshow/parksmap
+    tag: latest
+    pullPolicy: Always
+
+  port: 8080
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 800Mi
+    limits: {}
+
+  route:
+    enabled: true
+    # Leave empty to let OpenShift auto-generate the hostname
+    host: ""
+    tls:
+      termination: edge
+      # No insecureEdgeTerminationPolicy on frontend (set to "" to omit)
+      insecureEdgeTerminationPolicy: "Redirect"
+
+# ──────────────────────────────────────────────
+# Backend  (nationalparks)
+# ──────────────────────────────────────────────
+backend:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/openshift-roadshow/nationalparks
+    tag: latest
+    pullPolicy: Always
+
+  port: 8080
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 80Mi
+    limits:
+      cpu: 100m
+      memory: 500Mi
+
+  route:
+    enabled: true
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+  # Health-check paths exposed by the Spring Boot app
+  healthPath: /ws/healthz/
+
+  # Extra ports exposed by the backend container
+  extraPorts:
+    - containerPort: 8443
+    - containerPort: 8778
+
+# ──────────────────────────────────────────────
+# Database  (MongoDB)
+# ──────────────────────────────────────────────
+database:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/centos7/mongodb-60-centos7
+    tag: "6.0.4"
+    pullPolicy: IfNotPresent
+
+  port: 27017
+
+  resources:
+    requests:
+      cpu: 20m
+      memory: 60Mi
+    limits: {}
+
+  # Name of the database the backend app connects to
+  dbName: parksapp
+
+  # Host name used by the backend to reach MongoDB (matches the Service name)
+  host: mongodb
+
+  # Credentials – override these or inject via an external secret manager
+  credentials:
+    adminUser: admin
+    # ⚠️  Change before deploying to production
+    adminPassword: secret
+    appUser: parksapp
+    # ⚠️  Change before deploying to production
+    appPassword: keepsafe
+
+  # Storage for /data/db and /data/configdb
+  # Set persistence.enabled=true and supply a storageClass for durable storage
+  persistence:
+    enabled: false
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+# ──────────────────────────────────────────────
+# RBAC
+# ──────────────────────────────────────────────
+rolebinding:
+  # Grants the default ServiceAccount 'view' access so parksmap can
+  # discover backend Services via the Kubernetes API
+  enabled: true

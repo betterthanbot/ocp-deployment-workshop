@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nationalparks
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.backend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "parksmap.backend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "parksmap.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: nationalparks
+          image: {{ include "parksmap.backend.image" . }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+              protocol: TCP
+            {{- range .Values.backend.extraPorts }}
+            - containerPort: {{ .containerPort }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: MONGODB_SERVER_HOST
+              value: {{ .Values.database.host | quote }}
+            - name: MONGODB_DATABASE
+              value: {{ .Values.database.dbName | quote }}
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: app-usr
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: app-pwd
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: {{ .Values.backend.port }}
+              scheme: HTTP
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: {{ .Values.backend.port }}
+              scheme: HTTP
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 1
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
