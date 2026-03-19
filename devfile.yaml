@@ -1,0 +1,29 @@
+schemaVersion: 2.2.0
+metadata:
+  name: udi
+  displayName: Universal Developer Image
+  description: Universal Developer Image provides various programming languages tools and runtimes for instant coding
+  icon: https://raw.githubusercontent.com/devfile/devfile-web/main/apps/landing-page/public/pwa-192x192.png
+  tags:
+    - Java
+    - Maven
+    - Scala
+    - PHP
+    - .NET
+    - Node.js
+    - Go
+    - Python
+    - Pip
+    - ubi9
+  projectType: universal
+  language: Polyglot
+  version: 1.0.0
+components:
+  - name: tools
+    container:
+      image: quay.io/kahlai/master-class:v1
+      memoryLimit: 4G
+      memoryRequest: 512Mi
+      cpuRequest: 500m
+      cpuLimit: 4000m
+      mountSources: true

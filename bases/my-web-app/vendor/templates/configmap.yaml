@@ -34,12 +34,300 @@ metadata:
 data:
   index.html: |
     <!DOCTYPE html>
-    <html>
-      <head><title>{{ include "my-webapp.fullname" . }}</title></head>
-      <body>
-        <h1>{{ include "my-webapp.fullname" . }}</h1>
-        <p>Application deployed successfully. Replace this page with your content.</p>
-      </body>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <title>Challenge Complete!</title>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+      <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+        :root {
+          --gold:    #f5c842;
+          --gold-lt: #fde98a;
+          --cream:   #fdf8ee;
+          --ink:     #1a1209;
+          --rose:    #e8725a;
+          --green:   #4caf7d;
+          --blue:    #5b8dee;
+        }
+    
+        body {
+          min-height: 100vh;
+          background: var(--ink);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'DM Sans', sans-serif;
+          overflow: hidden;
+          position: relative;
+        }
+    
+        /* ── Animated radial glow background ── */
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background: radial-gradient(ellipse 80% 60% at 50% 60%, #3b2500 0%, #1a1209 70%);
+          z-index: 0;
+        }
+    
+        /* ── Confetti canvas ── */
+        canvas {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 1;
+        }
+    
+        /* ── Card ── */
+        .card {
+          position: relative;
+          z-index: 2;
+          background: var(--cream);
+          border-radius: 4px;
+          padding: 64px 72px 56px;
+          max-width: 620px;
+          width: 90%;
+          text-align: center;
+          box-shadow:
+            0 0 0 1px rgba(245,200,66,.25),
+            0 30px 80px rgba(0,0,0,.7),
+            0 0 120px rgba(245,200,66,.08);
+          animation: rise .9s cubic-bezier(.22,1,.36,1) both;
+        }
+    
+        @keyframes rise {
+          from { opacity:0; transform: translateY(48px) scale(.96); }
+          to   { opacity:1; transform: translateY(0)   scale(1); }
+        }
+    
+        /* ── Ribbon banner ── */
+        .ribbon {
+          position: absolute;
+          top: -18px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--gold);
+          color: var(--ink);
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500;
+          font-size: 11px;
+          letter-spacing: .18em;
+          text-transform: uppercase;
+          padding: 6px 20px;
+          border-radius: 2px;
+          white-space: nowrap;
+          box-shadow: 0 4px 14px rgba(0,0,0,.25);
+        }
+        .ribbon::before, .ribbon::after {
+          content: '✦';
+          margin: 0 6px;
+          opacity: .6;
+        }
+    
+        /* ── Trophy ── */
+        .trophy {
+          font-size: 72px;
+          line-height: 1;
+          display: block;
+          margin-bottom: 24px;
+          animation: bob 3s ease-in-out infinite;
+        }
+        @keyframes bob {
+          0%,100% { transform: translateY(0); }
+          50%      { transform: translateY(-8px); }
+        }
+    
+        /* ── Headline ── */
+        h1 {
+          font-family: 'Playfair Display', serif;
+          font-weight: 900;
+          font-size: clamp(2rem, 6vw, 2.9rem);
+          color: var(--ink);
+          line-height: 1.1;
+          margin-bottom: 8px;
+        }
+        h1 span {
+          color: var(--rose);
+          display: block;
+        }
+    
+        /* ── Divider ── */
+        .divider {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 24px 0;
+        }
+        .divider::before, .divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(to right, transparent, #c8b89a, transparent);
+        }
+        .divider span { font-size: 18px; }
+    
+        /* ── Body text ── */
+        p {
+          font-size: 17px;
+          color: #4a3c2a;
+          line-height: 1.7;
+          font-weight: 300;
+        }
+        p strong {
+          font-weight: 500;
+          color: var(--ink);
+        }
+    
+        /* ── Prize badge ── */
+        .prize {
+          margin-top: 32px;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          background: var(--gold);
+          color: var(--ink);
+          font-weight: 500;
+          font-size: 15px;
+          padding: 13px 28px;
+          border-radius: 3px;
+          letter-spacing: .04em;
+          box-shadow: 0 6px 24px rgba(245,200,66,.35);
+          animation: pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+          0%,100% { box-shadow: 0 6px 24px rgba(245,200,66,.35); }
+          50%      { box-shadow: 0 6px 36px rgba(245,200,66,.65); }
+        }
+    
+        /* ── Star sparkles ── */
+        .sparkles {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          overflow: hidden;
+          border-radius: 4px;
+        }
+        .sparkle {
+          position: absolute;
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: var(--gold);
+          opacity: 0;
+          animation: sparkle-anim 4s ease-in-out infinite;
+        }
+        @keyframes sparkle-anim {
+          0%   { opacity:0; transform: scale(0) translateY(0); }
+          20%  { opacity:1; transform: scale(1) translateY(-10px); }
+          80%  { opacity:.6; }
+          100% { opacity:0; transform: scale(.3) translateY(-30px); }
+        }
+    
+        .footer-note {
+          margin-top: 28px;
+          font-size: 13px;
+          color: #9b8b74;
+          letter-spacing: .03em;
+        }
+      </style>
+    </head>
+    <body>
+    
+    <canvas id="confetti"></canvas>
+    
+    <div class="card">
+      <div class="sparkles" id="sparkles"></div>
+      <div class="ribbon">Official Announcement</div>
+    
+      <span class="trophy">🏆</span>
+    
+      <h1>You Did It! <span>Challenge Complete.</span></h1>
+    
+      <div class="divider"><span>✦</span></div>
+    
+      <p>
+        Congratulations — you have <strong>successfully completed the challenge</strong>.<br/>
+        Your effort, persistence, and brilliance paid off in spectacular fashion.
+      </p>
+    
+      <p style="margin-top:16px;">
+        <strong>Hip Hip! Hooray! Hip Hip! Hooray!</strong>
+      </p>
+    
+      <div class="prize"> 😋🍽️ &nbsp; Now we wait for lunch! &nbsp; 😋🍽️ </div>
+    
+      <p class="footer-note">You've earned every bit of it — well done! 🌟</p>
+    </div>
+    
+    <script>
+      /* ── Confetti ── */
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      window.addEventListener('resize', () => {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    
+      const colors = ['#f5c842','#e8725a','#4caf7d','#5b8dee','#fde98a','#ffffff'];
+      const pieces = Array.from({length: 130}, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        r: Math.random() * 7 + 3,
+        d: Math.random() * 120 + 20,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        tilt: Math.random() * 10 - 10,
+        tiltAngle: 0,
+        tiltSpeed: Math.random() * .08 + .02,
+        speed: Math.random() * 2.5 + .8,
+        shape: Math.random() > .5 ? 'rect' : 'circle'
+      }));
+    
+      function drawConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.tiltAngle);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = .85;
+          if (p.shape === 'rect') {
+            ctx.fillRect(-p.r/2, -p.r/2, p.r * 1.8, p.r * .7);
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.r/2, 0, Math.PI*2);
+            ctx.fill();
+          }
+          ctx.restore();
+          p.y    += p.speed;
+          p.x    += Math.sin(p.d * .02) * 1.2;
+          p.tiltAngle += p.tiltSpeed;
+          if (p.y > canvas.height + 20) {
+            p.y = -10;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+        requestAnimationFrame(drawConfetti);
+      }
+      drawConfetti();
+    
+      /* ── Sparkles ── */
+      const sparkleContainer = document.getElementById('sparkles');
+      for (let i = 0; i < 14; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.left   = Math.random() * 100 + '%';
+        s.style.top    = Math.random() * 100 + '%';
+        s.style.animationDelay = (Math.random() * 4) + 's';
+        s.style.width  = (Math.random()*5+3)+'px';
+        s.style.height = s.style.width;
+        sparkleContainer.appendChild(s);
+      }
+    </script>
+    </body>
     </html>
   servername.conf: |
     ServerName {{ include "my-webapp.fullname" . }}

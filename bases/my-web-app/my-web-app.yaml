@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 ---
 # Source: betterthanbot-redhat/templates/configmap.yaml
 # ============================================================
@@ -27,7 +27,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 data:
   APP_ENV: "production"
   LOG_LEVEL: "info"
@@ -53,7 +53,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 data:
   index.html: |
     <!DOCTYPE html>
@@ -81,7 +81,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 spec:
   accessModes:
     - "ReadWriteOnce"
@@ -109,11 +109,11 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 subjects:
   - kind: ServiceAccount
     name: my-web-app-betterthanbot-redhat
-    namespace: default
+    namespace: user1-dev
 roleRef:
   kind: ClusterRole
   name: view # Change this to your specific role if needed
@@ -130,7 +130,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 spec:
   type: ClusterIP
   ports:
@@ -153,7 +153,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 spec:
   replicas: 1
   selector:
@@ -296,7 +296,7 @@ metadata:
     app.kubernetes.io/instance: my-web-app
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: user1-dev
 spec:
   to:
     kind: Service
