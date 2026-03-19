@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nationalparks
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.backend.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: nationalparks
+    deployment: wrong-name
+  ports:
+    - name: 8080-tcp
+      port: {{ .Values.backend.port }}
+      targetPort: {{ .Values.backend.port }}
+      protocol: TCP
+    {{- range .Values.backend.extraPorts }}
+    - name: {{ printf "%d-tcp" (.containerPort | int) }}
+      port: {{ .containerPort }}
+      targetPort: {{ .containerPort }}
+      protocol: TCP
+    {{- end }}

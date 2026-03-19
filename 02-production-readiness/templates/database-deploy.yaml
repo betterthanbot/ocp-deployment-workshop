@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.database.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.database.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "parksmap.database.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "parksmap.database.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mongodb
+          image: {{ include "parksmap.database.image" . }}
+          imagePullPolicy: {{ .Values.database.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+          ports:
+            - containerPort: {{ .Values.database.port }}
+              protocol: TCP
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: admin-usr
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: admin-pwd
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+          volumeMounts:
+            - name: mongodb-configdb
+              mountPath: /data/configdb
+            - name: mongodb-data
+              mountPath: /data/db
+      volumes:
+        {{- if .Values.database.persistence.enabled }}
+        - name: mongodb-configdb
+          emptyDir: {}
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb-data
+        {{- else }}
+        - name: mongodb-configdb
+          emptyDir: {}
+        - name: mongodb-data
+          emptyDir: {}
+        {{- end }}

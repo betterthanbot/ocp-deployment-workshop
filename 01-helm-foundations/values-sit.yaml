@@ -1,0 +1,44 @@
+# -----------------------------------------------
+# SIT environment overrides
+# -----------------------------------------------
+
+namespace: "userx-sit"
+
+frontend:
+  replicaCount: 2
+  image:
+    tag: "1.3.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 800Mi
+    limits:
+      cpu: 200m
+      memory: 1Gi
+
+backend:
+  replicaCount: 2
+  appName: "National Parks (SIT)"
+  image:
+    tag: "1.3.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+database:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  credentials:
+    adminPassword: secret
+    appPassword: keepsafe

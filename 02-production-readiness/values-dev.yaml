@@ -1,0 +1,34 @@
+# -----------------------------------------------
+# Dev environment overrides
+# -----------------------------------------------
+
+namespace: "userx-dev"
+
+frontend:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 800Mi
+    limits: {}
+
+backend:
+  appName: "National Parks (DEV)"
+  image:
+    tag: nonexistent-tag
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 10m
+      memory: 80Mi
+    limits: {}
+
+database:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 60Mi
+    limits: {}
+  credentials:
+    adminPassword: secret
+    appPassword: keepsafe

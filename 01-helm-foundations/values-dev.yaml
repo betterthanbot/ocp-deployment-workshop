@@ -1,0 +1,19 @@
+# -----------------------------------------------
+# Dev environment overrides
+# -----------------------------------------------
+
+namespace: "userx-dev"
+
+frontend:
+  replicaCount: 1
+
+backend:
+  appName: "National Parks (DEV)"
+  image:
+    tag: latest
+    pullPolicy: Always
+
+database:
+  credentials:
+    adminPassword: secret
+    appPassword: keepsafe

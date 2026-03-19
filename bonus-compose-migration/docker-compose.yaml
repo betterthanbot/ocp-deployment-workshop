@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+
+  mongodb:
+    image: quay.io/centos7/mongodb-60-centos7:6.0.4
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    ports:
+      - "27017:27017"
+    restart: always
+
+  nationalparks:
+    image: quay.io/openshift-roadshow/nationalparks:latest
+    environment:
+      MONGODB_SERVER_HOST: mongodb
+      MONGODB_DATABASE: parksapp
+      MONGODB_USER: parksapp
+      MONGODB_PASSWORD: keepsafe
+      APPNAME: "National Parks"
+    depends_on:
+      - mongodb
+    ports:
+      - "8080:8080"
+    restart: always
+
+  parksmap:
+    image: quay.io/openshift-roadshow/parksmap:latest
+    depends_on:
+      - nationalparks
+    ports:
+      - "8081:8080"
+    restart: always
+
+volumes:
+  mongo-data:
+  mongo-config:

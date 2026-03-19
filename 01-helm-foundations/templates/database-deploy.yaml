@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.database.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.database.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "parksmap.database.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "parksmap.database.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mongodb
+          image: {{ include "parksmap.database.image" . }}
+          imagePullPolicy: {{ .Values.database.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.database.port }}
+              protocol: TCP
+          env:
+            # TODO: Add MONGO_INITDB_ROOT_USERNAME from the "mongodb-credentials" secret, key "admin-usr"
+            #       Use valueFrom.secretKeyRef
+
+            # TODO: Add MONGO_INITDB_ROOT_PASSWORD from the "mongodb-credentials" secret, key "admin-pwd"
+            #       Use valueFrom.secretKeyRef
+
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+          volumeMounts:
+            # TODO: Mount a volume named "mongodb-configdb" at path /data/configdb
+
+            # TODO: Mount a volume named "mongodb-data" at path /data/db
+
+      volumes:
+        # TODO: Define the volumes for the database
+        #       If persistence is enabled (.Values.database.persistence.enabled):
+        #         - "mongodb-configdb" should be an emptyDir
+        #         - "mongodb-data" should reference a PVC named "mongodb-data"
+        #       If persistence is NOT enabled:
+        #         - Both volumes should be emptyDir
+        #       Use an {{- if }} / {{- else }} / {{- end }} block

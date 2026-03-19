@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nationalparks
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.backend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "parksmap.backend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "parksmap.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: nationalparks
+          image: {{ include "parksmap.backend.image" . }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+              protocol: TCP
+            {{- range .Values.backend.extraPorts }}
+            - containerPort: {{ .containerPort }}
+              protocol: TCP
+            {{- end }}
+          env:
+            # TODO: Add an env var called APPNAME with value from .Values.backend.appName
+            #       Use the "default" function to fall back to "National Parks" if not set
+            #       Use the "quote" function to wrap the value in quotes
+
+            # TODO: Add an env var called MONGODB_SERVER_HOST with value from .Values.database.host
+            #       (use the quote function)
+
+            # TODO: Add an env var called MONGODB_DATABASE with value from .Values.database.dbName
+            #       (use the quote function)
+
+            # TODO: Add an env var called MONGODB_USER that reads from a Secret
+            #       The secret is called "mongodb-credentials", key is "app-usr"
+            #       Use valueFrom.secretKeyRef
+
+            # TODO: Add an env var called MONGODB_PASSWORD that reads from a Secret
+            #       The secret is called "mongodb-credentials", key is "app-pwd"
+            #       Use valueFrom.secretKeyRef
+
+          # TODO: Add a livenessProbe that does an HTTP GET
+          #       Use .Values.backend.healthPath for the path
+          #       Use .Values.backend.port for the port
+          #       Set scheme to HTTP, periodSeconds to 10, failureThreshold to 3, timeoutSeconds to 1
+
+          # TODO: Add a readinessProbe with the same settings as the livenessProbe
+
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

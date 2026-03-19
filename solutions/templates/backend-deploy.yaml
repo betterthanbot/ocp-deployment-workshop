@@ -32,6 +32,8 @@ spec:
               protocol: TCP
             {{- end }}
           env:
+            - name: APPNAME
+              value: {{ .Values.backend.appName | default "National Parks" | quote }}
             - name: MONGODB_SERVER_HOST
               value: {{ .Values.database.host | quote }}
             - name: MONGODB_DATABASE

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parksmap
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.frontend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "parksmap.frontend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "parksmap.frontend.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: parksmap
+          # TODO: Set the container image using the helper template "parksmap.frontend.image"
+          # TODO: Set the imagePullPolicy from values
+          ports:
+            # TODO: Add the container port from values (frontend.port), with protocol TCP
+          resources:
+            # TODO: Add resource requests and limits from values (frontend.resources)

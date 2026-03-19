@@ -1,0 +1,107 @@
+# -----------------------------------------------
+# Global
+# -----------------------------------------------
+global:
+  partOf: workshop
+
+# -----------------------------------------------
+# Frontend  (parksmap)
+# -----------------------------------------------
+frontend:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/openshift-roadshow/parksmap
+    tag: latest
+    pullPolicy: Always
+
+  port: 8080
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 800Mi
+    limits: {}
+
+  route:
+    enabled: true
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: "Redirect"
+
+# -----------------------------------------------
+# Backend  (nationalparks)
+# -----------------------------------------------
+backend:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/openshift-roadshow/nationalparks
+    tag: latest
+    pullPolicy: Always
+
+  port: 8080
+
+  appName: "National Parks"
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 80Mi
+    limits:
+      cpu: 100m
+      memory: 500Mi
+
+  route:
+    enabled: true
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+  healthPath: /ws/healthz/
+
+  extraPorts:
+    - containerPort: 8443
+    - containerPort: 8778
+
+# -----------------------------------------------
+# Database  (MongoDB)
+# -----------------------------------------------
+database:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/centos7/mongodb-60-centos7
+    tag: "6.0.4"
+    pullPolicy: IfNotPresent
+
+  port: 27017
+
+  resources:
+    requests:
+      cpu: 20m
+      memory: 60Mi
+    limits: {}
+
+  dbName: parksapp
+  host: mongodb
+
+  credentials:
+    adminUser: admin
+    adminPassword: secret
+    appUser: parksapp
+    appPassword: keepsafe
+
+  persistence:
+    enabled: false
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+# -----------------------------------------------
+# RBAC
+# -----------------------------------------------
+rolebinding:
+  enabled: true

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nationalparks
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.backend.labels" . | nindent 4 }}
+    # TODO: Add a label "type: parksmap-backend"
+    #       This label is critical -- parksmap frontend uses it to auto-discover backend services
+spec:
+  type: ClusterIP
+  selector:
+    # TODO: Use the backend selector labels helper to match pods
+    #       Hint: use "include" with nindent
+  ports:
+    # TODO: Add the primary port (name it "8080-tcp")
+    #       Set port and targetPort from .Values.backend.port, protocol TCP
+
+    # TODO: Add extra ports by ranging over .Values.backend.extraPorts
+    #       Name each port using printf "%d-tcp" with the containerPort value

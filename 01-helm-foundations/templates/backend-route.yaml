@@ -1,0 +1,26 @@
+{{- if .Values.backend.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nationalparks
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.backend.labels" . | nindent 4 }}
+    type: parksmap-backend
+spec:
+  {{- if .Values.backend.route.host }}
+  host: {{ .Values.backend.route.host }}
+  {{- end }}
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: nationalparks
+    weight: 100
+  wildcardPolicy: None
+  tls:
+    # TODO: Set the termination type from .Values.backend.route.tls.termination
+
+    # TODO: Conditionally set insecureEdgeTerminationPolicy
+    #       Only include it if .Values.backend.route.tls.insecureEdgeTerminationPolicy is set
+{{- end }}
