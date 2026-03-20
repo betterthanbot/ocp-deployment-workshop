@@ -4,17 +4,17 @@
 global:
   partOf: workshop
 
-namespace: "userx-sit"
+namespace: "user6-sit"
 
 # -----------------------------------------------
 # Frontend  (parksmap)
 # -----------------------------------------------
 frontend:
-  replicaCount: 2
+  replicaCount: 1
 
   image:
-    repository: docker.io/iogk/parksmap
-    tag: "1.0-sit"
+    repository: quay.io/rhn-support-gong/parksmap
+    digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
     pullPolicy: IfNotPresent
 
   port: 8080
@@ -22,7 +22,7 @@ frontend:
   resources:
     requests:
       cpu: 50m
-      memory: 800Mi
+      memory: 500Mi
     limits:
       cpu: 200m
       memory: 1Gi
@@ -38,11 +38,11 @@ frontend:
 # Backend  (nationalparks)
 # -----------------------------------------------
 backend:
-  replicaCount: 2
+  replicaCount: 1
 
   image:
-    repository: quay.io/openshift-roadshow/nationalparks
-    tag: "1.3.0"
+    repository: quay.io/rhn-support-gong/nationalparks
+    digest: sha256:79d590291a3f0b21eb5791b581a946567f44fae12fb9f8a1732518ea9825870f
     pullPolicy: IfNotPresent
 
   port: 8080
@@ -51,10 +51,10 @@ backend:
 
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 200m
+      cpu: 500m
       memory: 512Mi
 
   route:
@@ -77,8 +77,8 @@ database:
   replicaCount: 1
 
   image:
-    repository: quay.io/centos7/mongodb-60-centos7
-    tag: "6.0.4"
+    repository: quay.io/rhn-support-gong/mongodb
+    digest: sha256:3c8dd1b08f8a2ec0338902affd432b40130e5acf49d6e3a1ca05ff5168100059
     pullPolicy: IfNotPresent
 
   port: 27017
