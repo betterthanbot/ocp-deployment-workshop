@@ -4,7 +4,7 @@
 global:
   partOf: workshop
 
-namespace: "user6-sit"
+namespace: user1-sit
 
 # -----------------------------------------------
 # Frontend  (parksmap)

@@ -32,3 +32,11 @@ uninstalldev:
 uninstallsit:	
 	helm uninstall \
 	parksmap 
+
+podmanbuild:
+	podman build \                                        
+	--platform linux/amd64 \
+	-t quay.io/rhn-support-gong/mongo-init:latest .
+
+podmanpush:
+	podman push quay.io/rhn-support-gong/mongo-init:latest
