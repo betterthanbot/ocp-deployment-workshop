@@ -71,8 +71,8 @@ database:
   replicaCount: 1
 
   image:
-    repository: quay.io/centos7/mongodb-60-centos7
-    tag: "6.0.4"
+    repository: quay.io/centos7/mongodb-36-centos7
+    tag: latest
     pullPolicy: IfNotPresent
 
   port: 27017

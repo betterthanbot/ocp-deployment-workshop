@@ -41,7 +41,6 @@ spec:
               value: {{ include "parksmap.backend.url" . | quote }}
           command:
             - /bin/bash
-            # - yum install -y mongodb-tools curl && \
             - -c
             - |
               # 1. Wait for MongoDB to be reachable
@@ -53,8 +52,8 @@ spec:
                 --authenticationDatabase admin \
                 --eval "db.adminCommand('ping')" \
                 --quiet; do
-                echo "MongoDB not ready, retrying in 5s..."
-                sleep 5
+                echo "MongoDB not ready, retrying in 30s..."
+                sleep 30
               done
               echo "MongoDB is up."
 
