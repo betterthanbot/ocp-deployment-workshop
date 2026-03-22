@@ -1,34 +1,113 @@
 # -----------------------------------------------
-# Dev environment overrides
+# Global
 # -----------------------------------------------
+global:
+  partOf: workshop
 
-namespace: "userx-dev"
+namespace: user1-dev
 
+# -----------------------------------------------
+# Frontend  (parksmap)
+# -----------------------------------------------
 frontend:
   replicaCount: 1
-  resources:
-    requests:
-      cpu: 10m
-      memory: 800Mi
-    limits: {}
 
-backend:
-  appName: "National Parks (DEV)"
   image:
-    tag: nonexistent-tag
-    pullPolicy: Always
-  resources:
-    requests:
-      cpu: 10m
-      memory: 80Mi
-    limits: {}
+    repository: quay.io/rhn-support-gong/parksmap
+    tag: latest
+    pullPolicy: IfNotPresent
 
-database:
+  port: 8080
+
   resources:
     requests:
-      cpu: 20m
-      memory: 60Mi
-    limits: {}
+      cpu: 50m
+      memory: 500Mi
+    limits:
+      cpu: 200m
+      memory: 1Gi
+
+  route:
+    enabled: true
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: "Redirect"
+
+# -----------------------------------------------
+# Backend  (nationalparks)
+# -----------------------------------------------
+backend:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/rhn-support-gong/nationalparks
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  port: 8080
+
+  appName: "National Parks"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+  route:
+    enabled: true
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+  healthPath: /ws/healthz/
+
+  extraPorts:
+    - containerPort: 8443
+    - containerPort: 8778
+
+# -----------------------------------------------
+# Database  (MongoDB)
+# -----------------------------------------------
+database:
+  replicaCount: 1
+
+  image:
+    repository: quay.io/rhn-support-gong/mongodb
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  port: 27017
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  dbName: parksapp
+  host: mongodb
+
   credentials:
+    adminUser: admin
     adminPassword: secret
+    appUser: parksapp
     appPassword: keepsafe
+
+  persistence:
+    enabled: false
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+# -----------------------------------------------
+# RBAC
+# -----------------------------------------------
+rolebinding:
+  enabled: true

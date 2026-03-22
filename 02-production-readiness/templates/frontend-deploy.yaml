@@ -24,8 +24,6 @@ spec:
         - name: parksmap
           image: {{ include "parksmap.frontend.image" . }}
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
-          securityContext:
-            runAsUser: 0
           ports:
             - containerPort: {{ .Values.frontend.port }}
               protocol: TCP

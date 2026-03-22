@@ -32,30 +32,37 @@ spec:
               protocol: TCP
             {{- end }}
           env:
-            # TODO: Add an env var called APPNAME with value from .Values.backend.appName
-            #       Use the "default" function to fall back to "National Parks" if not set
-            #       Use the "quote" function to wrap the value in quotes
-
-            # TODO: Add an env var called MONGODB_SERVER_HOST with value from .Values.database.host
-            #       (use the quote function)
-
-            # TODO: Add an env var called MONGODB_DATABASE with value from .Values.database.dbName
-            #       (use the quote function)
-
-            # TODO: Add an env var called MONGODB_USER that reads from a Secret
-            #       The secret is called "mongodb-credentials", key is "app-usr"
-            #       Use valueFrom.secretKeyRef
-
-            # TODO: Add an env var called MONGODB_PASSWORD that reads from a Secret
-            #       The secret is called "mongodb-credentials", key is "app-pwd"
-            #       Use valueFrom.secretKeyRef
-
-          # TODO: Add a livenessProbe that does an HTTP GET
-          #       Use .Values.backend.healthPath for the path
-          #       Use .Values.backend.port for the port
-          #       Set scheme to HTTP, periodSeconds to 10, failureThreshold to 3, timeoutSeconds to 1
-
-          # TODO: Add a readinessProbe with the same settings as the livenessProbe
-
+            - name: APPNAME
+              value: {{ .Values.backend.appName | default "National Parks" | quote }}
+            - name: MONGODB_SERVER_HOST
+              value: {{ .Values.database.host | quote }}
+            - name: MONGODB_DATABASE
+              value: {{ .Values.database.dbName | quote }}
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: app-usr
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: app-pwd
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: {{ .Values.backend.port }}
+              scheme: HTTP
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthPath }}
+              port: {{ .Values.backend.port }}
+              scheme: HTTP
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 1
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}

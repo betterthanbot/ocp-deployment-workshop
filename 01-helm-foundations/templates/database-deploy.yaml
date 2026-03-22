@@ -28,24 +28,33 @@ spec:
             - containerPort: {{ .Values.database.port }}
               protocol: TCP
           env:
-            # TODO: Add MONGO_INITDB_ROOT_USERNAME from the "mongodb-credentials" secret, key "admin-usr"
-            #       Use valueFrom.secretKeyRef
-
-            # TODO: Add MONGO_INITDB_ROOT_PASSWORD from the "mongodb-credentials" secret, key "admin-pwd"
-            #       Use valueFrom.secretKeyRef
-
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: admin-usr
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: admin-pwd
           resources:
             {{- toYaml .Values.database.resources | nindent 12 }}
           volumeMounts:
-            # TODO: Mount a volume named "mongodb-configdb" at path /data/configdb
-
-            # TODO: Mount a volume named "mongodb-data" at path /data/db
-
+            - name: mongodb-configdb
+              mountPath: /data/configdb
+            - name: mongodb-data
+              mountPath: /data/db
       volumes:
-        # TODO: Define the volumes for the database
-        #       If persistence is enabled (.Values.database.persistence.enabled):
-        #         - "mongodb-configdb" should be an emptyDir
-        #         - "mongodb-data" should reference a PVC named "mongodb-data"
-        #       If persistence is NOT enabled:
-        #         - Both volumes should be emptyDir
-        #       Use an {{- if }} / {{- else }} / {{- end }} block
+        {{- if .Values.database.persistence.enabled }}
+        - name: mongodb-configdb
+          emptyDir: {}
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb-data
+        {{- else }}
+        - name: mongodb-configdb
+          emptyDir: {}
+        - name: mongodb-data
+          emptyDir: {}
+        {{- end }}

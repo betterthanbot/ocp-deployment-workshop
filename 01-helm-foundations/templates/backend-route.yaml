@@ -19,8 +19,8 @@ spec:
     weight: 100
   wildcardPolicy: None
   tls:
-    # TODO: Set the termination type from .Values.backend.route.tls.termination
-
-    # TODO: Conditionally set insecureEdgeTerminationPolicy
-    #       Only include it if .Values.backend.route.tls.insecureEdgeTerminationPolicy is set
+    termination: {{ .Values.backend.route.tls.termination }}
+    {{- if .Values.backend.route.tls.insecureEdgeTerminationPolicy }}
+    insecureEdgeTerminationPolicy: {{ .Values.backend.route.tls.insecureEdgeTerminationPolicy }}
+    {{- end }}
 {{- end }}

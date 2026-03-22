@@ -5,16 +5,20 @@ metadata:
   namespace: {{ include "parksmap.namespace" . }}
   labels:
     {{- include "parksmap.backend.labels" . | nindent 4 }}
-    # TODO: Add a label "type: parksmap-backend"
-    #       This label is critical -- parksmap frontend uses it to auto-discover backend services
+    # This label is read by parksmap to auto-discover backend services
+    type: parksmap-backend
 spec:
   type: ClusterIP
   selector:
-    # TODO: Use the backend selector labels helper to match pods
-    #       Hint: use "include" with nindent
+    {{- include "parksmap.backend.selectorLabels" . | nindent 4 }}
   ports:
-    # TODO: Add the primary port (name it "8080-tcp")
-    #       Set port and targetPort from .Values.backend.port, protocol TCP
-
-    # TODO: Add extra ports by ranging over .Values.backend.extraPorts
-    #       Name each port using printf "%d-tcp" with the containerPort value
+    - name: 8080-tcp
+      port: {{ .Values.backend.port }}
+      targetPort: {{ .Values.backend.port }}
+      protocol: TCP
+    {{- range .Values.backend.extraPorts }}
+    - name: {{ printf "%d-tcp" (.containerPort | int) }}
+      port: {{ .containerPort }}
+      targetPort: {{ .containerPort }}
+      protocol: TCP
+    {{- end }}

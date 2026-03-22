@@ -22,9 +22,10 @@ spec:
     spec:
       containers:
         - name: parksmap
-          # TODO: Set the container image using the helper template "parksmap.frontend.image"
-          # TODO: Set the imagePullPolicy from values
+          image: {{ include "parksmap.frontend.image" . }}
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           ports:
-            # TODO: Add the container port from values (frontend.port), with protocol TCP
+            - containerPort: {{ .Values.frontend.port }}
+              protocol: TCP
           resources:
-            # TODO: Add resource requests and limits from values (frontend.resources)
+            {{- toYaml .Values.frontend.resources | nindent 12 }}

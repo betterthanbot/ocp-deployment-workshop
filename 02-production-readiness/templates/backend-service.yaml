@@ -5,11 +5,12 @@ metadata:
   namespace: {{ include "parksmap.namespace" . }}
   labels:
     {{- include "parksmap.backend.labels" . | nindent 4 }}
+    # This label is read by parksmap to auto-discover backend services
+    type: parksmap-backend
 spec:
   type: ClusterIP
   selector:
-    app: nationalparks
-    deployment: wrong-name
+    {{- include "parksmap.backend.selectorLabels" . | nindent 4 }}
   ports:
     - name: 8080-tcp
       port: {{ .Values.backend.port }}

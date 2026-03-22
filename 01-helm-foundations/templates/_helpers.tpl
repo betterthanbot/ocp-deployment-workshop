@@ -35,7 +35,7 @@ role: frontend
 {{- end }}
 
 {{/*
-Frontend selector labels (used by Service -> Pod matching).
+Frontend selector labels (used by Service → Pod matching).
 */}}
 {{- define "parksmap.frontend.selectorLabels" -}}
 app: parksmap
@@ -86,19 +86,26 @@ deployment: mongodb
 Frontend image reference.
 */}}
 {{- define "parksmap.frontend.image" -}}
-{{ printf "%s:%s" .Values.frontend.image.repository .Values.frontend.image.tag }}
+{{ printf "%s@%s" .Values.frontend.image.repository .Values.frontend.image.digest }}
 {{- end }}
 
 {{/*
 Backend image reference.
 */}}
 {{- define "parksmap.backend.image" -}}
-{{ printf "%s:%s" .Values.backend.image.repository .Values.backend.image.tag }}
+{{ printf "%s@%s" .Values.backend.image.repository .Values.backend.image.digest }}
 {{- end }}
 
 {{/*
 Database image reference.
 */}}
 {{- define "parksmap.database.image" -}}
-{{ printf "%s:%s" .Values.database.image.repository .Values.database.image.tag }}
+{{ printf "%s@%s" .Values.database.image.repository .Values.database.image.digest }}
+{{- end }}
+
+{{/*
+National Parks internal service URL
+*/}}
+{{- define "parksmap.backend.url" -}}
+http://nationalparks.{{ include "parksmap.namespace" . }}.svc.cluster.local:{{ .Values.backend.port }}
 {{- end }}
