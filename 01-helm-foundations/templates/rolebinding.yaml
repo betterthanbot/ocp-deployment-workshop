@@ -7,6 +7,9 @@ metadata:
   labels:
     {{- include "parksmap.labels" . | nindent 4 }}
 roleRef:
+  # Security Note: For a workshop setting, granting the generic 'view' ClusterRole
+  # is expedient. In a strict production environment, you should create a minimal
+  # custom Role that ONLY grants 'get' and 'list' verbs on 'services' resources.
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: view

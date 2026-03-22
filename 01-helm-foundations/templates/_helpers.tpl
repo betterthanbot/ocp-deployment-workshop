@@ -84,21 +84,43 @@ deployment: mongodb
 
 {{/*
 Frontend image reference.
+Uses digest if set, falls back to tag.
 */}}
 {{- define "parksmap.frontend.image" -}}
+{{- if .Values.frontend.image.digest -}}
+{{ printf "%s@%s" .Values.frontend.image.repository .Values.frontend.image.digest }}
+{{- else -}}
 {{ printf "%s:%s" .Values.frontend.image.repository .Values.frontend.image.tag }}
+{{- end }}
 {{- end }}
 
 {{/*
 Backend image reference.
+Uses digest if set, falls back to tag.
 */}}
 {{- define "parksmap.backend.image" -}}
+{{- if .Values.backend.image.digest -}}
+{{ printf "%s@%s" .Values.backend.image.repository .Values.backend.image.digest }}
+{{- else -}}
 {{ printf "%s:%s" .Values.backend.image.repository .Values.backend.image.tag }}
+{{- end }}
 {{- end }}
 
 {{/*
 Database image reference.
+Uses digest if set, falls back to tag.
 */}}
 {{- define "parksmap.database.image" -}}
+{{- if .Values.database.image.digest -}}
+{{ printf "%s@%s" .Values.database.image.repository .Values.database.image.digest }}
+{{- else -}}
 {{ printf "%s:%s" .Values.database.image.repository .Values.database.image.tag }}
+{{- end }}
+{{- end }}
+
+{{/*
+National Parks internal service URL
+*/}}
+{{- define "parksmap.backend.url" -}}
+http://nationalparks.{{ include "parksmap.namespace" . }}.svc.cluster.local:{{ .Values.backend.port }}
 {{- end }}

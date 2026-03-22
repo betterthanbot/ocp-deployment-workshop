@@ -2,7 +2,6 @@
 dev:
 	helm template \
 	parksmap \
-	--set=namespace=user1-dev\
 	--values=values-dev.yaml \
 	./ \
 	> parksmap-dev.yaml
@@ -10,7 +9,6 @@ dev:
 sit:
 	helm template \
 	parksmap \
-	--set=namespace=user1-sit \
 	--values=values-sit.yaml \
 	./ \
 	> parksmap-sit.yaml
@@ -19,22 +17,26 @@ installdev:
 	helm install \
 	parksmap \
 	./ \
-	--namespace=user1-dev \
 	--values=values-dev.yaml 
 
 installsit:
 	helm install \
 	parksmap \
 	./ \
-	--namespace=user1-sit \
 	--values=values-sit.yaml
 
 uninstalldev:
 	helm uninstall \
-	parksmap \
-	--namespace=user1-dev	
+	parksmap
 
 uninstallsit:	
 	helm uninstall \
-	parksmap \
-	--namespace=user1-sit
+	parksmap 
+
+podmanbuild:
+	podman build \                                        
+	--platform linux/amd64 \
+	-t quay.io/rhn-support-gong/mongo-init:latest .
+
+podmanpush:
+	podman push quay.io/rhn-support-gong/mongo-init:latest

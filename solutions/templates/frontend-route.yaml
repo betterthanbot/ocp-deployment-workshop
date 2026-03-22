@@ -1,0 +1,25 @@
+{{- if .Values.frontend.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: parksmap
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.frontend.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.frontend.route.host }}
+  host: {{ .Values.frontend.route.host }}
+  {{- end }}
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: parksmap
+    weight: 100
+  wildcardPolicy: None
+  tls:
+    termination: {{ .Values.frontend.route.tls.termination }}
+    {{- if .Values.frontend.route.tls.insecureEdgeTerminationPolicy }}
+    insecureEdgeTerminationPolicy: {{ .Values.frontend.route.tls.insecureEdgeTerminationPolicy }}
+    {{- end }}
+{{- end }}

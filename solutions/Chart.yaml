@@ -15,4 +15,5 @@ keywords:
 sources:
   - https://github.com/openshift-roadshow/nationalparks
 maintainers:
-  - name: workshop-team
+  - name: Gibson Ong
+  - name: Ivan Ong

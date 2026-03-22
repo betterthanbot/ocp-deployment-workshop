@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-init
+  namespace: {{ include "parksmap.namespace" . }}
+  labels:
+    {{- include "parksmap.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: quay.io/rhn-support-gong/mongo-init:latest
+          imagePullPolicy: {{ .Values.database.image.pullPolicy }}
+          env:
+            - name: MONGODB_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: admin-pwd
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: app-usr
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: app-pwd
+            - name: MONGODB_DATABASE
+              value: {{ .Values.database.dbName | quote }}
+            - name: MONGODB_HOST
+              value: {{ .Values.database.host | quote }}
+            - name: BACKEND_URL
+              value: {{ include "parksmap.backend.url" . | quote }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # 1. Wait for MongoDB to be reachable
+              echo "Waiting for MongoDB at $MONGODB_HOST..."
+              until mongosh \
+                --host "$MONGODB_HOST" \
+                --username admin \
+                --password "$MONGODB_ADMIN_PASSWORD" \
+                --authenticationDatabase admin \
+                --eval "db.adminCommand('ping')" \
+                --quiet; do
+                echo "MongoDB not ready, retrying in 60s..."
+                sleep 60
+              done
+              echo "MongoDB is up."
+
+              # 2. Create app user and database
+              echo "Creating app user..."
+              mongosh \
+                --host "$MONGODB_HOST" \
+                --username admin \
+                --password "$MONGODB_ADMIN_PASSWORD" \
+                --authenticationDatabase admin \
+                --quiet \
+                --eval "
+                  db = db.getSiblingDB('$MONGODB_DATABASE');
+                  if (db.getUser('$MONGODB_USER') == null) {
+                    db.createUser({
+                      user: '$MONGODB_USER',
+                      pwd:  '$MONGODB_PASSWORD',
+                      roles: [
+                        { role: 'dbAdmin',    db: '$MONGODB_DATABASE' },
+                        { role: 'readWrite',  db: '$MONGODB_DATABASE' }
+                      ]
+                    });
+                    print('User created.');
+                  } else {
+                    print('User already exists, skipping.');
+                  }
+                "
+
+              # 3. Trigger data load via internal service
+              echo "Loading initial park data..."
+              curl -sf "$BACKEND_URL/ws/data/load" \
+                && echo "Data loaded successfully." \
+                || echo "Data load failed — backend may not be ready yet."
