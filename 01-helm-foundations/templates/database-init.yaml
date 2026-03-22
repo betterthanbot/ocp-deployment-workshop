@@ -52,8 +52,8 @@ spec:
                 --authenticationDatabase admin \
                 --eval "db.adminCommand('ping')" \
                 --quiet; do
-                echo "MongoDB not ready, retrying in 30s..."
-                sleep 30
+                echo "MongoDB not ready, retrying in 360s..."
+                sleep 60
               done
               echo "MongoDB is up."
 
