@@ -54,7 +54,7 @@ backend:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 250m
+      cpu: "1"
       memory: 512Mi
 
   route:
@@ -78,7 +78,7 @@ database:
 
   image:
     repository: quay.io/rhn-support-gong/mongodb
-    tag: latest
+    tag: 6.0.4
     pullPolicy: IfNotPresent
 
   port: 27017
@@ -105,6 +105,13 @@ database:
     storageClass: ""
     accessMode: ReadWriteOnce
     size: 1Gi
+
+databaseinit:
+
+  image:
+    repository: quay.io/rhn-support-gong/mongo-init
+    tag: latest
+    pullPolicy: IfNotPresent
 
 # -----------------------------------------------
 # RBAC

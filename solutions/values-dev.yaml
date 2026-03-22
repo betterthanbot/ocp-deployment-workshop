@@ -14,7 +14,7 @@ frontend:
 
   image:
     repository: quay.io/rhn-support-gong/parksmap
-    digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+    tag: latest
     pullPolicy: IfNotPresent
 
   port: 8080
@@ -42,7 +42,7 @@ backend:
 
   image:
     repository: quay.io/rhn-support-gong/nationalparks
-    digest: sha256:79d590291a3f0b21eb5791b581a946567f44fae12fb9f8a1732518ea9825870f
+    tag: latest
     pullPolicy: IfNotPresent
 
   port: 8080
@@ -78,7 +78,7 @@ database:
 
   image:
     repository: quay.io/rhn-support-gong/mongodb
-    digest: sha256:3c8dd1b08f8a2ec0338902affd432b40130e5acf49d6e3a1ca05ff5168100059
+    tag: 6.0.4
     pullPolicy: IfNotPresent
 
   port: 27017
@@ -105,6 +105,13 @@ database:
     storageClass: ""
     accessMode: ReadWriteOnce
     size: 1Gi
+
+databaseinit:
+
+  image:
+    repository: quay.io/rhn-support-gong/mongo-init
+    tag: latest
+    pullPolicy: IfNotPresent
 
 # -----------------------------------------------
 # RBAC

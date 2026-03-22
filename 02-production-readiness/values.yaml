@@ -98,6 +98,13 @@ database:
     accessMode: ReadWriteOnce
     size: 1Gi
 
+databaseinit:
+
+  image:
+    repository: quay.io/rhn-support-gong/mongo-init
+    tag: latest
+    pullPolicy: IfNotPresent
+
 # -----------------------------------------------
 # RBAC
 # -----------------------------------------------

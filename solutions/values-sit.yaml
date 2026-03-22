@@ -106,6 +106,13 @@ database:
     accessMode: ReadWriteOnce
     size: 1Gi
 
+databaseinit:
+
+  image:
+    repository: quay.io/rhn-support-gong/mongo-init
+    digest: sha256:5161e42774232c04135866cf4098ea063f4e3d6678ef1eaeeeead2927956b51e
+    pullPolicy: IfNotPresent
+
 # -----------------------------------------------
 # RBAC
 # -----------------------------------------------
