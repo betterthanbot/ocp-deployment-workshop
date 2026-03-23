@@ -8,7 +8,7 @@ A hands-on workshop for deploying applications to OpenShift using Helm charts. Y
 
 You are a developer joining the **ParksMap** team. The application displays national parks on a map, backed by a REST API and a MongoDB database. Your team has been deploying using the OpenShift web console — but it is time to move to infrastructure-as-code using **Helm**.
 
-Over the next three hours, you will build a Helm chart from scratch, deploy it to multiple environments, and debug the kinds of failures that happen in real production deployments.
+Over the next one hours, you will deploy a Helm chart to multiple environments with different restrictions, and debug the kinds of failures that happen in real production deployments.
 
 ---
 
@@ -27,17 +27,17 @@ Before you begin, make sure you have:
 
 | Section | Estimated Time | Description |
 |---------|---------------|-------------|
-| [Part 1: Helm Foundations](01-helm-foundations/) | ~90 min | Build a Helm chart from scratch by completing skeleton templates and creating missing files |
-| [Part 2: Production Readiness](02-production-readiness/) | ~90 min | Debug and fix a pre-broken chart covering common deployment pitfalls |
+| [Part 1: Helm Foundations](01-helm-foundations/) | ~30 min | Build a Helm chart from scratch by completing skeleton templates and creating missing files |
+| [Part 2: Production Readiness](02-production-readiness/) | ~30 min | Debug and fix a pre-broken chart covering common deployment pitfalls |
 | [Bonus: Docker Compose Migration](bonus-compose-migration/) | If time permits | Translate a `docker-compose.yaml` into Helm chart resources |
 
-Work through the sections in order. Each section has its own `README.md` with step-by-step instructions.
+Work through the sections in order. Each section has its own step-by-step instructions.
 
 ---
 
 ## Step 1 — Launch Your Dev Spaces Workspace
 
-You will be writing and running all commands from inside **Red Hat OpenShift Dev Spaces**, which gives you a fully configured browser-based VS Code environment with `helm`, `oc`, and `git` pre-installed.
+You will be writing and running all commands from inside **Red Hat OpenShift Dev Spaces**, which gives you a fully configured browser-based VS Code environment with `helm` and `oc` pre-installed.
 
 ### 1.1 — Open Dev Spaces from the OpenShift Console
 
@@ -45,18 +45,19 @@ You will be writing and running all commands from inside **Red Hat OpenShift Dev
 2. Click the **grid / application launcher icon** (⋮⋮⋮) in the top-right corner of the navigation bar.
 3. Select **Red Hat OpenShift Dev Spaces** from the drop-down menu.
 
-> If you do not see Dev Spaces in the launcher, ask your workshop conductor to confirm it has been enabled for your cluster.
+> If you do not see Dev Spaces in the launcher, ask your workshop conductor to confirm it has been enabled for your user.
 
 ### 1.2 — Create a New Workspace from the Workshop Git Repository
 
 1. Once Dev Spaces opens, click **Create Workspace**.
-2. In the **Git Repository URL** field, paste the following link:
+2. In the **Choose an Editor** tab, select VS Code - Opensource
+3. In the **Import from Git** field, paste the following link:
 
    ```
    https://github.com/betterthanbot/ocp-deployment-workshop.git
    ```
 
-3. Leave all other settings as default and click **Create & Open**.
+4. Leave all other settings as default and click **Create & Open**.
 
 Dev Spaces will clone the repository and launch a VS Code environment with all the workshop files already available in the file explorer on the left.
 
@@ -90,13 +91,6 @@ oc projects
 ```
 
 You should see two namespaces assigned to you: `userN-dev` and `userN-sit` (where `N` is your user number). Write these down — you will use them throughout the workshop.
-
-### 2.3 — Navigate to the Workshop Directory
-
-```bash
-cd /projects/ocp-deployment-workshop
-ls
-```
 
 ---
 
@@ -161,8 +155,6 @@ You have been assigned two namespaces that simulate a real promotion pipeline:
 | Purpose | Rapid testing and iteration | Stable integration testing |
 | Namespace | `userN-dev` | `userN-sit` |
 | Frontend image | `quay.io/rhn-support-gong/parksmap:latest` | Uses image digest (see below) |
-| Replicas | 1 per component | 2 for frontend and backend |
-| Resource limits | Relaxed | Strict |
 | ACS image policy | Not enforced | **`latest` tags are blocked** |
 
 ### ⚠️ SIT Environment: ACS Image Policy
@@ -225,16 +217,113 @@ Or save it to a file to inspect it in the VS Code editor:
 helm template parksmap ./ -f values-dev.yaml > /tmp/rendered-dev.yaml
 ```
 
+### 5.1.1 — Deploy for DEV
+When you have check your template and are ready to deploy run the following command:
+
+```bash
+helm install parksmap ./ --values=values-dev.yaml
+```
+
+Check if your pods are ready. 
+
+```bash
+oc get pods -n=userN-dev
+oc get jobs -n=userN-dev
+oc get routes -n=userN-dev
+```
+
+> **Why are we checking for jobs?** Remember seeding the database with `https://nationalparks-wksp-userX.apps.cluster.example.com/ws/data/load`? Since we are running helm now, and would like to even automate this, we have a database init! and that is done via a `kind: job`. If you open your map and do not see the national parks, you may want to check the logs of the pod or job to see if it managed to render all the data! :D 
+
+### 5.1.2 — Uninstall helm for DEV
+
+```bash
+helm uninstall parksmap -n=userN-dev
+```
+
 ### 5.2 — Render for SIT
 
 ```bash
 # From the 02-production-readiness directory:
 cd /projects/ocp-deployment-workshop/02-production-readiness
 
+helm template parksmap ./ -f values-sit.yaml > 
+```
+
+### 5.2.1 — Deploy for SIT
+When you have check your template and are ready to deploy run the following command:
+
+```bash
+helm install parksmap ./ --values=values-sit.yaml
+```
+
+Check if your pods are ready. 
+
+```bash
+oc get pods -n=userN-sit
+oc get jobs -n=userN-sit
+oc get routes -n=userN-sit
+```
+
+BOO! You should have received an error! If you read the start, you would have remembered that we needed to change the tags to a specific version or a digest! Lets do that right now.. 
+
+### 5.2.2 — Fixing values-sit.yaml and redeploying the helm
+
+In the folder, you should see `values-sit.yaml` click on it.. Looking at the value file, you can see the digest are being comment out. Remove the # hash and # the `tag:` or you can remove it entirely. 
+
+
+Before...
+```yaml
+  image:
+    repository: quay.io/rhn-support-gong/parksmap
+    tag: latest
+    # digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+    pullPolicy: IfNotPresent
+
+```
+
+After...
+```yaml
+  image:
+    repository: quay.io/rhn-support-gong/parksmap
+    # tag: latest
+    digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+    pullPolicy: IfNotPresent
+
+```
+> Please continue to do it for all images... 
+
+
+### 5.2.3 — Redeploying for SIT
+When you have check your template and are ready to deploy run the following command:
+
+Lets first, uninstall the helm and do a fresh working installation. 
+
+```bash
+helm uninstall parksmap -n=userN-dev
+
+```
+
+Then next, we will do a template, do check for the images now, it should be showing ...@sha256:xxx and not `tag: latest`
+```bash
 helm template parksmap ./ -f values-sit.yaml
 ```
 
-### 5.3 — What to look for
+If your template is good, lets do the deployment. 
+```bash
+helm install parksmap ./ --values=values-sit.yaml
+```
+
+Check if your pods are ready. 
+
+```bash
+oc get pods -n=userN-sit
+oc get jobs -n=userN-sit
+oc get routes -n=userN-sit
+```
+
+*YAY! We have completed this helm deployment 101! Now we wait for lunch!*
+
+### Helpful notes! — What to look for
 
 After rendering, scan the output for:
 
