@@ -1,120 +1,120 @@
-# -----------------------------------------------
-# Global
-# -----------------------------------------------
-global:
-  partOf: workshop
+# # -----------------------------------------------
+# # Global
+# # -----------------------------------------------
+# global:
+#   partOf: workshop
 
-namespace: userN-dev
+# namespace: user1-sit
 
-# -----------------------------------------------
-# Frontend  (parksmap)
-# -----------------------------------------------
-frontend:
-  replicaCount: 1
+# # -----------------------------------------------
+# # Frontend  (parksmap)
+# # -----------------------------------------------
+# frontend:
+#   replicaCount: 1
 
-  image:
-    repository: quay.io/rhn-support-gong/parksmap
-    tag: latest
-    pullPolicy: IfNotPresent
+#   image:
+#     repository: quay.io/rhn-support-gong/parksmap
+#     digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+#     pullPolicy: IfNotPresent
 
-  port: 8080
+#   port: 8080
 
-  resources:
-    requests:
-      cpu: 50m
-      memory: 500Mi
-    limits:
-      cpu: 200m
-      memory: 1Gi
+#   resources:
+#     requests:
+#       cpu: 50m
+#       memory: 500Mi
+#     limits:
+#       cpu: 200m
+#       memory: 1Gi
 
-  route:
-    enabled: true
-    host: ""
-    tls:
-      termination: edge
-      insecureEdgeTerminationPolicy: "Redirect"
+#   route:
+#     enabled: true
+#     host: ""
+#     tls:
+#       termination: edge
+#       insecureEdgeTerminationPolicy: "Redirect"
 
-# -----------------------------------------------
-# Backend  (nationalparks)
-# -----------------------------------------------
-backend:
-  replicaCount: 1
+# # -----------------------------------------------
+# # Backend  (nationalparks)
+# # -----------------------------------------------
+# backend:
+#   replicaCount: 1
 
-  image:
-    repository: quay.io/rhn-support-gong/nationalparks
-    tag: latest
-    pullPolicy: IfNotPresent
+#   image:
+#     repository: quay.io/rhn-support-gong/nationalparks
+#     digest: sha256:79d590291a3f0b21eb5791b581a946567f44fae12fb9f8a1732518ea9825870f
+#     pullPolicy: IfNotPresent
 
-  port: 8080
+#   port: 8080
 
-  appName: "National Parks"
+#   appName: "National Parks (SIT)"
 
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: "1"
-      memory: 512Mi
+#   resources:
+#     requests:
+#       cpu: 100m
+#       memory: 256Mi
+#     limits:
+#       cpu: 500m
+#       memory: 512Mi
 
-  route:
-    enabled: true
-    host: ""
-    tls:
-      termination: edge
-      insecureEdgeTerminationPolicy: Redirect
+#   route:
+#     enabled: true
+#     host: ""
+#     tls:
+#       termination: edge
+#       insecureEdgeTerminationPolicy: Redirect
 
-  healthPath: /ws/healthz/
+#   healthPath: /ws/healthz/
 
-  extraPorts:
-    - containerPort: 8443
-    - containerPort: 8778
+#   extraPorts:
+#     - containerPort: 8443
+#     - containerPort: 8778
 
-# -----------------------------------------------
-# Database  (MongoDB)
-# -----------------------------------------------
-database:
-  replicaCount: 1
+# # -----------------------------------------------
+# # Database  (MongoDB)
+# # -----------------------------------------------
+# database:
+#   replicaCount: 1
 
-  image:
-    repository: quay.io/rhn-support-gong/mongodb
-    tag: latest
-    pullPolicy: IfNotPresent
+#   image:
+#     repository: quay.io/rhn-support-gong/mongodb
+#     digest: sha256:3c8dd1b08f8a2ec0338902affd432b40130e5acf49d6e3a1ca05ff5168100059
+#     pullPolicy: IfNotPresent
 
-  port: 27017
+#   port: 27017
 
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
+#   resources:
+#     requests:
+#       cpu: 50m
+#       memory: 128Mi
+#     limits:
+#       cpu: 200m
+#       memory: 256Mi
 
-  dbName: parksapp
-  host: mongodb
+#   dbName: parksapp
+#   host: mongodb
 
-  credentials:
-    adminUser: admin
-    adminPassword: secret
-    appUser: parksapp
-    appPassword: keepsafe
+#   credentials:
+#     adminUser: admin
+#     adminPassword: secret
+#     appUser: parksapp
+#     appPassword: keepsafe
 
-  persistence:
-    enabled: false
-    storageClass: ""
-    accessMode: ReadWriteOnce
-    size: 1Gi
+#   persistence:
+#     enabled: false
+#     storageClass: ""
+#     accessMode: ReadWriteOnce
+#     size: 1Gi
 
-databaseinit:
+# databaseinit:
 
-  image:
-    repository: quay.io/rhn-support-gong/mongo-init
-    tag: latest
-    pullPolicy: IfNotPresent
+#   image:
+#     repository: quay.io/rhn-support-gong/mongo-init
+#     digest: sha256:5161e42774232c04135866cf4098ea063f4e3d6678ef1eaeeeead2927956b51e
+#     pullPolicy: IfNotPresent
 
-# -----------------------------------------------
-# RBAC
-# -----------------------------------------------
-rolebinding:
-  enabled: true
+# # -----------------------------------------------
+# # RBAC
+# # -----------------------------------------------
+# rolebinding:
+#   enabled: true

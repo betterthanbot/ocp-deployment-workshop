@@ -176,6 +176,11 @@ Navigate to the Part 2 directory:
 ```bash
 cd /projects/ocp-deployment-workshop/02-production-readiness
 ```
+**Change to your SIT working namespace:**
+
+```bash
+oc project userN-sit
+```
 
 **Try deploying as-is first:**
 

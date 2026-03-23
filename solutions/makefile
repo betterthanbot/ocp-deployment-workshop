@@ -23,13 +23,13 @@ installsit:
 	helm install \
 	parksmap \
 	./ \
-	--values=values-sit.yaml
+	--values=values-sit.yaml \
 
 uninstalldev:
 	helm uninstall \
 	parksmap
 
-uninstallsit:	
+uninstallsit:
 	helm uninstall \
 	parksmap 
 
