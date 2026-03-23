@@ -156,7 +156,7 @@ oc get routes -n userN-dev
 
 > **Why check jobs?** The chart includes a database init job that seeds the national parks data — the same step you previously ran manually via the `/ws/data/load` endpoint. If the map loads but shows no parks, check the job logs:
 > ```bash
-> oc logs job/mongodb-init -n userN-dev
+> oc logs job/mongo-init -n userN-dev
 > ```
 
 Open the route URL in your browser and confirm the map shows national parks. ✅
@@ -368,7 +368,7 @@ oc describe pod <pod-name> -n userN-dev
 **Diagnose:**
 ```bash
 oc get jobs -n userN-dev
-oc logs job/mongodb-init -n userN-dev
+oc logs job/mongo-init -n userN-dev
 ```
 
 ---

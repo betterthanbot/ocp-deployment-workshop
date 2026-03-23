@@ -4,6 +4,8 @@
 global:
   partOf: workshop
 
+namespace: userN-dev
+
 # -----------------------------------------------
 # Frontend  (parksmap)
 # -----------------------------------------------
@@ -11,17 +13,19 @@ frontend:
   replicaCount: 1
 
   image:
-    repository: quay.io/openshift-roadshow/parksmap
+    repository: quay.io/rhn-support-gong/parksmap
     tag: latest
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   port: 8080
 
   resources:
     requests:
-      cpu: 10m
-      memory: 800Mi
-    limits: {}
+      cpu: 50m
+      memory: 500Mi
+    limits:
+      cpu: 200m
+      memory: 1Gi
 
   route:
     enabled: true
@@ -37,19 +41,21 @@ backend:
   replicaCount: 1
 
   image:
-    repository: quay.io/openshift-roadshow/nationalparks
+    repository: quay.io/rhn-support-gong/nationalparks
     tag: latest
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   port: 8080
 
+  appName: "National Parks"
+
   resources:
     requests:
-      cpu: 10m
-      memory: 80Mi
-    limits:
       cpu: 100m
-      memory: 500Mi
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
 
   route:
     enabled: true
@@ -71,7 +77,7 @@ database:
   replicaCount: 1
 
   image:
-    repository: quay.io/centos7/mongodb-60-centos7
+    repository: quay.io/rhn-support-gong/mongodb
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -79,9 +85,11 @@ database:
 
   resources:
     requests:
-      cpu: 20m
-      memory: 60Mi
-    limits: {}
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
   dbName: parksapp
   host: mongodb

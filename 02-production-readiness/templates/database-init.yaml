@@ -16,7 +16,7 @@ spec:
       containers:
         - name: db-init
           image: {{ include "parksmap.databaseinit.image" . }}
-          imagePullPolicy: {{ .Values.database.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.databaseinit.image.pullPolicy }}
           env:
             - name: MONGODB_ADMIN_PASSWORD
               valueFrom:
