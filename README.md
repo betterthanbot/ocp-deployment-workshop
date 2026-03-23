@@ -234,6 +234,11 @@ oc get routes -n=userN-dev
 
 > **Why are we checking for jobs?** Remember seeding the database with `https://nationalparks-wksp-userX.apps.cluster.example.com/ws/data/load`? Since we are running helm now, and would like to even automate this, we have a database init! and that is done via a `kind: job`. If you open your map and do not see the national parks, you may want to check the logs of the pod or job to see if it managed to render all the data! :D 
 
+### 5.1.2 — Uninstall helm for DEV
+
+```bash
+helm uninstall parksmap -n=userN-dev
+```
 
 ### 5.2 — Render for SIT
 
@@ -241,7 +246,7 @@ oc get routes -n=userN-dev
 # From the 02-production-readiness directory:
 cd /projects/ocp-deployment-workshop/02-production-readiness
 
-helm template parksmap ./ -f values-sit.yaml
+helm template parksmap ./ -f values-sit.yaml > 
 ```
 
 ### 5.2.1 — Deploy for SIT
@@ -263,16 +268,62 @@ BOO! You should have received an error! If you read the start, you would have re
 
 ### 5.2.2 — Fixing values-sit.yaml and redeploying the helm
 
+In the folder, you should see `values-sit.yaml` click on it.. Looking at the value file, you can see the digest are being comment out. Remove the # hash and # the `tag:` or you can remove it entirely. 
+
+
+Before...
+```yaml
+  image:
+    repository: quay.io/rhn-support-gong/parksmap
+    tag: latest
+    # digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+    pullPolicy: IfNotPresent
 
 ```
+
+After...
+```yaml
+  image:
+    repository: quay.io/rhn-support-gong/parksmap
+    # tag: latest
+    digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+    pullPolicy: IfNotPresent
+
+```
+> Please continue to do it for all images... 
+
+
+### 5.2.3 — Redeploying for SIT
+When you have check your template and are ready to deploy run the following command:
+
+Lets first, uninstall the helm and do a fresh working installation. 
+
+```bash
+helm uninstall parksmap -n=userN-dev
+
 ```
 
+Then next, we will do a template, do check for the images now, it should be showing ...@sha256:xxx and not `tag: latest`
+```bash
+helm template parksmap ./ -f values-sit.yaml
+```
 
-> **Why are we checking for jobs?** Remember seeding the database with `https://nationalparks-wksp-userX.apps.cluster.example.com/ws/data/load`? Since we are running helm now, and would like to even automate this, we have a database init! and that is done via a `kind: job`. If you open your map and do not see the national parks, you may want to check the logs of the pod or job to see if it managed to render all the data! :D 
+If your template is good, lets do the deployment. 
+```bash
+helm install parksmap ./ --values=values-sit.yaml
+```
 
+Check if your pods are ready. 
 
+```bash
+oc get pods -n=userN-sit
+oc get jobs -n=userN-sit
+oc get routes -n=userN-sit
+```
 
-### 5.3 — What to look for
+*YAY! We have completed this helm deployment 101! Now we wait for lunch!*
+
+### Helpful notes! — What to look for
 
 After rendering, scan the output for:
 
