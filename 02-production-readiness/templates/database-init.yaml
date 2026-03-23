@@ -15,7 +15,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: db-init
-          image: quay.io/rhn-support-gong/mongo-init:latest
+          image: {{ include "parksmap.databaseinit.image" . }}
           imagePullPolicy: {{ .Values.database.image.pullPolicy }}
           env:
             - name: MONGODB_ADMIN_PASSWORD

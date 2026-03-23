@@ -119,6 +119,18 @@ Uses digest if set, falls back to tag.
 {{- end }}
 
 {{/*
+Database image reference.
+Uses digest if set, falls back to tag.
+*/}}
+{{- define "parksmap.databaseinit.image" -}}
+{{- if .Values.databaseinit.image.digest -}}
+{{ printf "%s@%s" .Values.databaseinit.image.repository .Values.databaseinit.image.digest }}
+{{- else -}}
+{{ printf "%s:%s" .Values.databaseinit.image.repository .Values.databaseinit.image.tag }}
+{{- end }}
+{{- end }}
+
+{{/*
 National Parks internal service URL
 */}}
 {{- define "parksmap.backend.url" -}}
