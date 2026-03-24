@@ -4,7 +4,7 @@
 global:
   partOf: workshop
 
-namespace: userN-dev
+namespace: userN-sit
 
 # -----------------------------------------------
 # Frontend  (parksmap)
@@ -24,7 +24,7 @@ frontend:
       cpu: 50m
       memory: 500Mi
     limits:
-      cpu: 200m
+      cpu: 500m
       memory: 1Gi
 
   route:
@@ -47,15 +47,15 @@ backend:
 
   port: 8080
 
-  appName: "National Parks"
+  appName: "National Parks (SIT)"
 
   resources:
     requests:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: "1"
-      memory: 512Mi
+      cpu: 500m
+      memory: 1Gi
 
   route:
     enabled: true
@@ -88,8 +88,8 @@ database:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 500m
+      memory: 1Gi
 
   dbName: parksapp
   host: mongodb

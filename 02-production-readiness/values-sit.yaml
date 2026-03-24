@@ -4,7 +4,7 @@
 global:
   partOf: workshop
 
-namespace: user1-sit
+namespace: userN-sit
 
 # -----------------------------------------------
 # Frontend  (parksmap)
@@ -14,8 +14,8 @@ frontend:
 
   image:
     repository: quay.io/rhn-support-gong/parksmap
-    # tag: latest
-    digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
+    tag: latest
+    # digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
     pullPolicy: IfNotPresent
 
   port: 8080
@@ -25,7 +25,7 @@ frontend:
       cpu: 50m
       memory: 500Mi
     limits:
-      cpu: 200m
+      cpu: 500m
       memory: 1Gi
 
   route:
@@ -43,8 +43,8 @@ backend:
 
   image:
     repository: quay.io/rhn-support-gong/nationalparks
-    # tag: latest
-    digest: sha256:79d590291a3f0b21eb5791b581a946567f44fae12fb9f8a1732518ea9825870f
+    tag: latest
+    # digest: sha256:79d590291a3f0b21eb5791b581a946567f44fae12fb9f8a1732518ea9825870f
     pullPolicy: IfNotPresent
 
   port: 8080
@@ -57,7 +57,7 @@ backend:
       memory: 256Mi
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 1Gi
 
   route:
     enabled: true
@@ -80,8 +80,8 @@ database:
 
   image:
     repository: quay.io/rhn-support-gong/mongodb
-    # tag: latest
-    digest: sha256:3c8dd1b08f8a2ec0338902affd432b40130e5acf49d6e3a1ca05ff5168100059
+    tag: latest
+    # digest: sha256:3c8dd1b08f8a2ec0338902affd432b40130e5acf49d6e3a1ca05ff5168100059
     pullPolicy: IfNotPresent
 
   port: 27017
@@ -91,8 +91,8 @@ database:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 500m
+      memory: 1Gi
 
   dbName: parksapp
   host: mongodb
@@ -113,8 +113,8 @@ databaseinit:
 
   image:
     repository: quay.io/rhn-support-gong/mongo-init
-    # tag: latest
-    digest: sha256:5161e42774232c04135866cf4098ea063f4e3d6678ef1eaeeeead2927956b51e
+    tag: latest
+    # digest: sha256:5161e42774232c04135866cf4098ea063f4e3d6678ef1eaeeeead2927956b51e
     pullPolicy: IfNotPresent
 
 # -----------------------------------------------
