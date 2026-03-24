@@ -45,6 +45,11 @@ You are a developer joining the **ParksMap** team. The application displays nati
 2. Under **Choose an Editor**, select **VS Code - Opensource**.
 3. In the **Import from Git** field, paste:
    ```
+   https://gitlab.com/betterthanbot/ocp-deployment-workshop.git
+   ```
+   
+   If you get a rate limit, do try to import from GitHub instead with this link
+   ```
    https://github.com/betterthanbot/ocp-deployment-workshop.git
    ```
 4. Click **Create & Open**.
