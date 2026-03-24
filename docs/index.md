@@ -110,7 +110,7 @@ Three components wired together through OpenShift Routes, Services, and Deployme
 |--------|-----|-----|
 | Namespace | `userN-dev` | `userN-sit` |
 | Purpose | Rapid testing | Stable integration testing |
-| Image tags | `latest` allowed | `:latest` **blocked by ACS** |
+| Image tags | `latest` allowed | `:latest` **Monitored by ACS** |
 
 ### ⚠️ SIT: ACS Image Policy
 
