@@ -25,7 +25,7 @@ You are a developer joining the **ParksMap** team. The application displays nati
 |---------|------|-------------|
 | [Part 1: Helm Foundations](01-helm-foundations/) | ~30 min | Deploy to DEV using a Helm chart |
 | [Part 2: Production Readiness](02-production-readiness/) | ~30 min | Debug and fix a broken deployment in SIT |
-| [Bonus: Docker Compose Migration](bonus-compose-migration/) | If time permits | Translate `docker-compose.yaml` into Helm |
+| [Bonus: Deploy a Web App](03-bonus-deployment/) | If time permits | Try deploying this helm! |
 
 ---
 
@@ -114,7 +114,7 @@ Three components wired together through OpenShift Routes, Services, and Deployme
 
 ### ⚠️ SIT: ACS Image Policy
 
-The SIT namespace has **Red Hat Advanced Cluster Security (ACS)** enforcing a policy that **blocks `:latest` image tags**. This is a real-world security control to prevent unversioned images from reaching integration environments.
+The SIT namespace has **Red Hat Advanced Cluster Security (ACS)** informing on a policy that **looks for `:latest` image tags**. This is a real-world security control to catch unversioned images from reaching integration environments.
 
 You will encounter this error in Part 2 — and fixing it is the exercise. See [Step 5.2](#52--sit-deployment) for the fix.
 
@@ -253,7 +253,9 @@ Open the route URL in your browser and confirm the map shows national parks. ✅
 
 ---
 
-🎉 **That's it — hands-on complete!** You have deployed the same application across two environments using Helm, and resolved a real ACS security policy enforcement issue. Grab some lunch — the bonus Docker Compose migration section will be there when you get back.
+🎉 **That's it — hands-on complete!** You have deployed the same application across two environments using Helm, and resolved a real ACS security policy enforcement issue. If you completed this before lunch has started, why not try **03-bonus-deployment**! This would be a real work scenario where developers or providers just pass you a helm chart and you deploy them! 
+
+Let's see if you can find the finishing page yourself!
 
 ---
 

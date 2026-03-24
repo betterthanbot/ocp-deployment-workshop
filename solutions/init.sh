@@ -18,8 +18,8 @@ until mongosh \
   --authenticationDatabase admin \
   --eval "db.adminCommand('ping')" \
   --quiet 2>/dev/null; do
-  echo "[init] MongoDB not ready, retrying in 5s..."
-  sleep 5
+  echo "[init] MongoDB not ready, retrying in 60s..."
+  sleep 60
 done
 echo "[init] MongoDB is up."
 
