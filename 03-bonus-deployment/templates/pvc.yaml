@@ -1,0 +1,72 @@
+# ============================================================
+# PersistentVolumeClaim — Application web content / uploads
+# ============================================================
+{{- if .Values.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-app
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode | quote }}
+  volumeMode: {{ .Values.persistence.volumeMode | default "Filesystem" }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}
+# ============================================================
+# PersistentVolumeClaim — PostgreSQL data volume
+# Only created when database.engine = postgresql
+# ============================================================
+{{- if and .Values.database.enabled (eq .Values.database.engine "postgresql") }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-db-postgresql
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.database.postgresql.persistence.accessMode | quote }}
+  volumeMode: {{ .Values.database.postgresql.persistence.volumeMode | default "Filesystem" }}
+  resources:
+    requests:
+      storage: {{ .Values.database.postgresql.persistence.size | quote }}
+  {{- if .Values.database.postgresql.persistence.storageClass }}
+  storageClassName: {{ .Values.database.postgresql.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}
+# ============================================================
+# PersistentVolumeClaim — MySQL data volume
+# Only created when database.engine = mysql
+# ============================================================
+{{- if and .Values.database.enabled (eq .Values.database.engine "mysql") }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "my-webapp.fullname" . }}-db-mysql
+  labels:
+    {{- include "my-webapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.database.mysql.persistence.accessMode | quote }}
+  volumeMode: {{ .Values.database.mysql.persistence.volumeMode | default "Filesystem" }}
+  resources:
+    requests:
+      storage: {{ .Values.database.mysql.persistence.size | quote }}
+  {{- if .Values.database.mysql.persistence.storageClass }}
+  storageClassName: {{ .Values.database.mysql.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}
