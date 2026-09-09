@@ -55,7 +55,7 @@ resources:
   limits:
     cpu: 200m
     memory: 256Mi
-  requests:
+  requests
     cpu: 100m
     memory: 128Mi
 
@@ -101,9 +101,8 @@ service:
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 route:
   enabled: true
-  # hostname: my-webapp.example.com
   tls:
-    termination: edge   
+    termination: edgeeee   
 
 # -------------------------------------------------------
 # App Persistence (web content / uploads)

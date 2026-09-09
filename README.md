@@ -14,7 +14,8 @@ You are a developer joining the **ParksMap** team. The application displays nati
 
 - Completed the **OpenShift Basics** class
 - Completed the **ParksMap clickops lab**
-- Access to your assigned namespaces — `userN-dev` and `userN-sit`
+- Access to workshop namespaces — `challenge1` and `challenge2`
+- Optional challenge namespaces (if running Parts 7-8): `challenge3`, `challenge4-staging`, `challenge4-production`
 - A Red Hat OpenShift account with Dev Spaces enabled
 
 ---
@@ -78,7 +79,7 @@ oc whoami
 oc projects
 ```
 
-You should see `userN-dev` and `userN-sit` (where `N` is your user number). **Note these down** — you will use them throughout the workshop.
+You should see `challenge1` and `challenge2`. **Note these down** — you will use them throughout the workshop.
 
 ---
 
@@ -98,7 +99,7 @@ With that traffic flow in mind, map it to the two environments you will deploy t
 
 | Aspect | DEV | SIT |
 |--------|-----|-----|
-| Namespace | `userN-dev` | `userN-sit` |
+| Namespace | `challenge1` | `challenge2` |
 | Purpose | Rapid testing | Stable integration testing |
 | Image tags | `latest` allowed | `:latest` **blocked by ACS** |
 
@@ -106,7 +107,7 @@ With that traffic flow in mind, map it to the two environments you will deploy t
 
 The SIT namespace has **Red Hat Advanced Cluster Security (ACS)** informing on a policy that **looks for `:latest` image tags**. This is a real-world security control to catch unversioned images from reaching integration environments.
 
-You will encounter this error during the SIT deployment — and fixing it is the exercise. See [Step 5.2](#52--sit-deployment) for the fix.
+You will encounter this error during the SIT deployment — and fixing it is the exercise. 
 
 ---
 
@@ -127,31 +128,31 @@ cd /projects/ocp-deployment-workshop/01-helm-foundations
 **Preview what will be deployed:**
 
 ```bash
-helm template parksmap ./ -f values-dev.yaml --set namespace=user1-dev ****check if they need this --set param
+helm template parksmap ./ -f values-dev.yaml
 ```
 
 Scan the output and confirm:
 - Images are using the expected tags
-- Namespace matches `userN-dev`
+- Namespace matches `challenge1`
 - Routes have TLS configured
 
 **Deploy:**
 
 ```bash
-helm install parksmap ./ --values=values-dev.yaml -n userN-dev
+helm install parksmap ./ --values=values-dev.yaml -n challenge1
 ```
 
 **Check everything is running:**
 
 ```bash
-oc get pods -n userN-dev
-oc get jobs -n userN-dev
-oc get routes -n userN-dev
+oc get pods -n challenge1
+oc get jobs -n challenge1
+oc get routes -n challenge1
 ```
 
 > **Why check jobs?** The chart includes a database init job that seeds the national parks data — the same step you previously ran manually via the `/ws/data/load` endpoint. If the map loads but shows no parks, check the job logs:
 > ```bash
-> oc logs job/mongo-init -n userN-dev
+> oc logs job/mongo-init -n challenge1
 > ```
 
 Open the route URL in your browser and confirm the map shows national parks. ✅
@@ -159,7 +160,7 @@ Open the route URL in your browser and confirm the map shows national parks. ✅
 **When done, uninstall:**
 
 ```bash
-helm uninstall parksmap -n userN-dev
+helm uninstall parksmap -n challenge1
 ```
 
 ---
@@ -176,13 +177,13 @@ cd /projects/ocp-deployment-workshop/02-production-readiness
 **Change to your SIT working namespace:**
 
 ```bash
-oc project userN-sit
+oc project challenge2
 ```
 
 **Try deploying as-is first:**
 
 ```bash
-helm install parksmap ./ --values=values-sit.yaml -n userN-sit
+helm install parksmap ./ --values=values-sit.yaml -n challenge2
 ```
 
 You will see an ACS admission error — this is expected! The `values-sit.yaml` file still has `tag: latest` set for all images.
@@ -218,7 +219,7 @@ Repeat for `backend`, `database`, and `databaseinit`. All digests are pre-filled
 Uninstall the failed release:
 
 ```bash
-helm uninstall parksmap -n userN-sit
+helm uninstall parksmap -n challenge2
 ```
 
 Preview the fixed templates — images should now show `@sha256:...` instead of `:latest`:
@@ -230,15 +231,15 @@ helm template parksmap ./ -f values-sit.yaml
 Deploy:
 
 ```bash
-helm install parksmap ./ --values=values-sit.yaml -n userN-sit
+helm install parksmap ./ --values=values-sit.yaml -n challenge2
 ```
 
 **Check everything is running:**
 
 ```bash
-oc get pods -n userN-sit
-oc get jobs -n userN-sit
-oc get routes -n userN-sit
+oc get pods -n challenge2
+oc get jobs -n challenge2
+oc get routes -n challenge2
 ```
 
 Open the route URL in your browser and confirm the map shows national parks. ✅
@@ -259,8 +260,8 @@ This exercise teaches release lifecycle management using `helm upgrade`, `helm h
 
 ```bash
 cd /projects/ocp-deployment-workshop/01-helm-foundations
-helm upgrade --install parksmap ./ -f values-dev.yaml -n userN-dev
-oc get pods -n userN-dev
+helm upgrade --install parksmap ./ -f values-dev.yaml -n challenge1
+oc get pods -n challenge1
 ```
 
 ### 5.2 — Perform a Safe Upgrade
@@ -268,18 +269,23 @@ oc get pods -n userN-dev
 Run a simple upgrade by overriding frontend replicas:
 
 ```bash
-helm upgrade parksmap ./ -f values-dev.yaml -n userN-dev --set frontend.replicaCount=2 --set namespace=userN-dev
-oc rollout status deployment/parksmap -n userN-dev
+helm upgrade parksmap ./ -f values-dev.yaml -n challenge1 --set frontend.replicaCount=2 --set namespace=challenge1
+oc rollout status deployment/parksmap -n challenge1
 ```
 You should expect the rollout to succeed and the frontend runs with 2 replicas.
 
 To view the list of Helm deployment revisions/history for this release:
 
 ```bash
-helm history parksmap -n userN-dev
+helm history parksmap -n challenge1
 ```
 
-Scale the Pods back to `replicaCount=1`.
+Scale the Pods back to `replicaCount=1`:
+
+```bash
+helm upgrade parksmap ./ -f values-dev.yaml -n challenge1 --set frontend.replicaCount=1 --set namespace=challenge1
+oc rollout status deployment/parksmap -n challenge1
+```
 
 You should now see a new Helm revision.
 
@@ -288,8 +294,8 @@ You should now see a new Helm revision.
 Trigger a controlled failure by setting an invalid image tag:
 
 ```bash
-helm upgrade parksmap ./ -f values-dev.yaml -n userN-dev --set frontend.image.tag=newest
-oc get pods -n userN-dev
+helm upgrade parksmap ./ -f values-dev.yaml -n challenge1 --set frontend.image.tag=newest
+oc get pods -n challenge1
 ```
 
 You may notice one old `parksmap` pod stays `Running` while a new pod shows `ErrImagePull`.
@@ -298,9 +304,9 @@ This shows why **RollingUpdate** is useful: OpenShift keeps healthy pods serving
 Inspect rollout/pod errors, then roll back to the previous good revision:
 
 ```bash
-helm history parksmap -n userN-dev
-helm rollback parksmap -n userN-dev
-oc rollout status deployment/parksmap -n userN-dev
+helm history parksmap -n challenge1
+helm rollback parksmap -n challenge1
+oc rollout status deployment/parksmap -n challenge1
 ```
 
 **Key takeaway:** Use `helm history` + `helm rollback` to recover from bad releases without uninstalling and reinstalling.
@@ -313,7 +319,7 @@ This exercise reinforces a pre-deploy quality gate before cluster changes.
 
 ### 6.1 — Validate Part 1 Chart
 
-Important: include `-f values-dev.yaml` when linting this exercise. If you run only `helm lint ./`, Helm lints using the chart's default `values.yaml`.
+**Important: include `-f values-dev.yaml` when linting this exercise. If you run only `helm lint ./`, Helm lints using the chart's default `values.yaml`.**
 
 ```bash
 cd /projects/ocp-deployment-workshop/01-helm-foundations
@@ -333,7 +339,7 @@ helm template parksmap ./ -f values-sit.yaml > /tmp/parksmap-sit-rendered.yaml
 
 Temporarily comment out one required value (for example an image `repository`) in `values-sit.yaml`, re-run `helm template`, observe failure, then restore the value and confirm validation passes again.
 
-#### 6.3.1 — Suggested break/fix scenarios (choose one)
+**Some Suggested break/fix scenarios:**
 
 - **Scenario A: YAML syntax error (lint-time failure)**
   - File/key to break: `02-production-readiness/values-sit.yaml` -> `frontend.resources.requests`
@@ -352,7 +358,7 @@ Temporarily comment out one required value (for example an image `repository`) i
 - **Scenario C: Kubernetes API validation error (deploy-time failure)**
   - File/key to break: `02-production-readiness/values-sit.yaml` -> `frontend.port`
   - Break it by changing `frontend.port: 8080` to `frontend.port: "eighty"`
-  - Run: `helm upgrade --install parksmap ./ -f values-sit.yaml -n userN-sit`
+  - Run: `helm upgrade --install parksmap ./ -f values-sit.yaml -n challenge2`
   - Fix: restore `frontend.port` to an integer (`8080`)
 
 **Outcome:** You build a repeatable habit: `helm lint` + `helm template` before every deploy.
@@ -361,15 +367,46 @@ Temporarily comment out one required value (for example an image `repository`) i
 
 ## Part 7 — Bonus Challenge: Helm Troubleshooting
 
-Use this as an knowledge-check challenge after Exercises 1-4 to test what you've learned.
-You’ll work through two quick troubleshooting checkpoints in values.yaml, then finish with helm upgrade --install.
+Use this as a knowledge-check challenge after Exercises 1-4 to test what you've learned.
+You will troubleshoot two checkpoints in `values.yaml`, then finish with `helm upgrade --install`.
 
-Navigate to the `03-bonus-deployment directory`:
+Navigate to the `03-bonus-deployment` directory:
 
 ```bash
 cd /projects/ocp-deployment-workshop/03-bonus-deployment
 ```
-Use your DEV namespace for this challenge: **userN-dev**
+Use namespace `challenge3` for this challenge:
+
+```bash
+oc project challenge3
+# If missing:
+# oc new-project challenge3
+```
+
+### 7.1 — Checkpoint 1: Lint failure
+
+Run:
+
+```bash
+helm lint ./
+```
+
+Fix the YAML syntax issue in `values.yaml` (`resources.requests` is intentionally malformed), then run `helm lint ./` again until it passes.
+
+### 7.2 — Checkpoint 2: Deploy-time validation failure
+
+Run:
+
+```bash
+helm upgrade --install my-web-app ./ -n challenge3
+```
+
+It should fail due to invalid Route TLS termination in `values.yaml`. Fix `route.tls.termination` to `edge`, then redeploy:
+
+```bash
+helm upgrade --install my-web-app ./ -n challenge3
+oc get pods,svc,routes -n challenge3
+```
 
 **Goal:** Practice deploying a third-party chart with minimal guidance, like in real project handovers.
 
@@ -377,29 +414,37 @@ Use your DEV namespace for this challenge: **userN-dev**
 
 ## Part 8 — Optional Exercise: Deploy with Kustomize Base + Overlay 
 
-Now deploy a simple web app using Kustomize and switch configurations between **staging** and **prod**.
+Now deploy a styled web app dashboard using Kustomize into **staging** and **production**.
+
+Navigate to the `04-kustomize-challenge directory`:
 
 ```bash
 cd /projects/ocp-deployment-workshop/04-kustomize-challenge
-oc project userN-dev
+# Make sure these namespaces exist first:
+# oc new-project challenge4-staging
+# oc new-project challenge4-production
 oc apply -k overlays/staging
-oc get pods,svc,routes -n userN-dev
+oc get pods,svc,routes -n challenge4-staging
 ```
 
-Get the route URL:
+Get the staging route URL:
 
 ```bash
-oc get route kustom-web -n userN-dev -o jsonpath='https://{.spec.host}{"\n"}'
+oc get route kustom-web -n challenge4-staging -o jsonpath='https://{.spec.host}{"\n"}'
 ```
 
-Apply the prod configuration:
+Apply the production configuration:
 
 ```bash
-oc apply -k overlays/prod
-oc rollout status deployment/kustom-web -n userN-dev
+oc apply -k overlays/production
+oc rollout status deployment/kustom-web -n challenge4-production
 ```
 
-Refresh the same route page and confirm message changes from **STAGING** to **PRODUCTION**.
+Get the production route URL:
+
+```bash
+oc get route kustom-web -n challenge4-production -o jsonpath='https://{.spec.host}{"\n"}'
+```
 
 **Goal:** Learn Kustomize base/overlay workflow and config-driven rollouts.
 Kustomize is built into `oc` and `kubectl` (`apply -k`) and follows a declarative model: you define desired state in files, then apply changes.
@@ -424,24 +469,24 @@ Helm is also declarative at deployment time, but it adds chart templating and re
 ```bash
 helm lint ./                                                         # Validate chart syntax
 helm template parksmap ./ -f values-dev.yaml                        # Render templates locally
-helm install parksmap ./ -f values-dev.yaml -n userN-dev            # Install
-helm upgrade parksmap ./ -f values-dev.yaml -n userN-dev            # Upgrade existing release
-helm upgrade --install parksmap ./ -f values-dev.yaml -n userN-dev  # Install or upgrade (idempotent)
-helm uninstall parksmap -n userN-dev                                 # Remove release
+helm install parksmap ./ -f values-dev.yaml -n challenge1           # Install
+helm upgrade parksmap ./ -f values-dev.yaml -n challenge1           # Upgrade existing release
+helm upgrade --install parksmap ./ -f values-dev.yaml -n challenge1 # Install or upgrade (idempotent)
+helm uninstall parksmap -n challenge1                                # Remove release
 ```
 
 ### Inspect & Debug
 
 ```bash
-helm list -n userN-dev                                               # List releases in namespace
+helm list -n challenge1                                              # List releases in namespace
 helm list -A                                                         # List across all namespaces
-helm get values parksmap -n userN-dev                               # Show values in use
-helm get values parksmap -n userN-dev --all                         # Show all values incl. defaults
-helm get manifest parksmap -n userN-dev                             # Show rendered YAML of live release
-helm history parksmap -n userN-dev                                  # Show revision history
-helm rollback parksmap -n userN-dev                                 # Roll back to previous revision
-helm rollback parksmap 2 -n userN-dev                               # Roll back to specific revision
-helm install parksmap ./ -f values-dev.yaml -n userN-dev --dry-run --debug  # Dry run with debug
+helm get values parksmap -n challenge1                              # Show values in use
+helm get values parksmap -n challenge1 --all                        # Show all values incl. defaults
+helm get manifest parksmap -n challenge1                            # Show rendered YAML of live release
+helm history parksmap -n challenge1                                 # Show revision history
+helm rollback parksmap -n challenge1                                # Roll back to previous revision
+helm rollback parksmap 2 -n challenge1                              # Roll back to specific revision
+helm install parksmap ./ -f values-dev.yaml -n challenge1 --dry-run --debug  # Dry run with debug
 ```
 
 ---
@@ -450,30 +495,30 @@ helm install parksmap ./ -f values-dev.yaml -n userN-dev --dry-run --debug  # Dr
 
 ```bash
 # Status
-oc get pods -n userN-dev                                      # List pods
-oc get pods -n userN-dev -w                                   # Watch pods live
-oc get jobs -n userN-dev                                      # List jobs
-oc get svc -n userN-dev                                       # List services
-oc get routes -n userN-dev                                    # List routes + URLs
-oc get endpoints -n userN-dev                                 # Verify pod-service wiring
-oc get all -n userN-dev                                       # All resources at once
+oc get pods -n challenge1                                      # List pods
+oc get pods -n challenge1 -w                                   # Watch pods live
+oc get jobs -n challenge1                                      # List jobs
+oc get svc -n challenge1                                       # List services
+oc get routes -n challenge1                                    # List routes + URLs
+oc get endpoints -n challenge1                                 # Verify pod-service wiring
+oc get all -n challenge1                                       # All resources at once
 
 # Debugging
-oc get events -n userN-dev --sort-by='.lastTimestamp'         # Recent events (start here!)
-oc describe pod <pod-name> -n userN-dev                       # Pod details + events
-oc logs <pod-name> -n userN-dev                               # Pod logs
-oc logs -f <pod-name> -n userN-dev                            # Stream logs live
-oc logs <pod-name> -n userN-dev --previous                    # Logs from crashed container
-oc rollout status deployment/<name> -n userN-dev              # Deployment rollout status
+oc get events -n challenge1 --sort-by='.lastTimestamp'         # Recent events (start here!)
+oc describe pod <pod-name> -n challenge1                       # Pod details + events
+oc logs <pod-name> -n challenge1                               # Pod logs
+oc logs -f <pod-name> -n challenge1                            # Stream logs live
+oc logs <pod-name> -n challenge1 --previous                    # Logs from crashed container
+oc rollout status deployment/<name> -n challenge1              # Deployment rollout status
 
 # Secrets
-oc get secret <name> -n userN-dev -o yaml                                           # View secret (base64)
-oc get secret <name> -n userN-dev -o jsonpath='{.data.password}' | base64 -d       # Decode value
+oc get secret <name> -n challenge1 -o yaml                                           # View secret (base64)
+oc get secret <name> -n challenge1 -o jsonpath='{.data.password}' | base64 -d       # Decode value
 
 # Context
 oc whoami                    # Current user
 oc projects                  # Your namespaces
-oc project userN-dev         # Switch default namespace
+oc project challenge1        # Switch default namespace
 ```
 
 ---
@@ -486,8 +531,8 @@ oc project userN-dev         # Switch default namespace
 
 **Fix:** In `02-production-readiness/values-sit.yaml`, for every image block comment out `tag: latest` and uncomment `digest: sha256:...`. Then:
 ```bash
-helm uninstall parksmap -n userN-sit
-helm install parksmap ./ -f values-sit.yaml -n userN-sit
+helm uninstall parksmap -n challenge2
+helm install parksmap ./ -f values-sit.yaml -n challenge2
 ```
 
 ---
@@ -498,11 +543,11 @@ helm install parksmap ./ -f values-sit.yaml -n userN-sit
 
 **Fix:**
 ```bash
-helm uninstall parksmap -n userN-dev
-helm install parksmap ./ -f values-dev.yaml -n userN-dev
+helm uninstall parksmap -n challenge1
+helm install parksmap ./ -f values-dev.yaml -n challenge1
 
 # Or use upgrade --install to handle both cases automatically:
-helm upgrade --install parksmap ./ -f values-dev.yaml -n userN-dev
+helm upgrade --install parksmap ./ -f values-dev.yaml -n challenge1
 ```
 
 ---
@@ -513,8 +558,8 @@ helm upgrade --install parksmap ./ -f values-dev.yaml -n userN-dev
 
 **Diagnose:**
 ```bash
-oc get events -n userN-dev --sort-by='.lastTimestamp'
-oc describe pod <pod-name> -n userN-dev    # Check the Events section
+oc get events -n challenge1 --sort-by='.lastTimestamp'
+oc describe pod <pod-name> -n challenge1    # Check the Events section
 ```
 
 ---
@@ -525,8 +570,8 @@ oc describe pod <pod-name> -n userN-dev    # Check the Events section
 
 **Diagnose:**
 ```bash
-oc logs <pod-name> -n userN-dev --previous    # Logs from the last crash
-oc describe pod <pod-name> -n userN-dev
+oc logs <pod-name> -n challenge1 --previous    # Logs from the last crash
+oc describe pod <pod-name> -n challenge1
 ```
 
 ---
@@ -537,8 +582,8 @@ oc describe pod <pod-name> -n userN-dev
 
 **Diagnose:**
 ```bash
-oc get jobs -n userN-dev
-oc logs job/mongo-init -n userN-dev
+oc get jobs -n challenge1
+oc logs job/mongo-init -n challenge1
 ```
 
 ---
@@ -549,9 +594,9 @@ oc logs job/mongo-init -n userN-dev
 
 **Diagnose:**
 ```bash
-oc get endpoints -n userN-sit      # Should show pod IPs — if "<none>", pods aren't ready
-oc get pods -n userN-sit
-oc describe pod <pod-name> -n userN-sit
+oc get endpoints -n challenge2      # Should show pod IPs — if "<none>", pods aren't ready
+oc get pods -n challenge2
+oc describe pod <pod-name> -n challenge2
 ```
 
 ---
@@ -562,7 +607,7 @@ oc describe pod <pod-name> -n userN-sit
 
 **Diagnose:**
 ```bash
-oc describe pod <pod-name> -n userN-dev    # Check Events for the exact pull error message
+oc describe pod <pod-name> -n challenge1    # Check Events for the exact pull error message
 ```
 
 ---
@@ -584,6 +629,7 @@ ocp-deployment-workshop/
 │   ├── values-sit.yaml
 │   └── templates/
 ├── 03-bonus-deployment/             # Optional third-party chart challenge
+├── 04-kustomize-challenge/          # Optional Kustomize staging/production challenge
 └── solutions/                       # Full working reference — try first before peeking
 ```
 

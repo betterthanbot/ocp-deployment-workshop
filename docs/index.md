@@ -396,7 +396,7 @@ Open the route and find the finishing page.
 
 ## Step 9 — Challenge 04: Kustomize Base + Overlay (Optional)
 
-Now deploy a simple web app using Kustomize and switch configurations between **staging** and **prod**.
+Now deploy a styled web app dashboard using Kustomize and switch configurations between **staging** and **prod**.
 
 ```bash
 cd /projects/ocp-deployment-workshop/04-kustomize-challenge
@@ -418,7 +418,7 @@ oc apply -k overlays/prod
 oc rollout status deployment/kustom-web -n userN-dev
 ```
 
-Refresh the same route page and confirm message changes from **STAGING** to **PRODUCTION**.
+Refresh the same route page and confirm the dashboard changes from **STAGING** to **PRODUCTION**.
 
 **Goal:** Learn Kustomize base/overlay workflow and config-driven rollouts.
 
