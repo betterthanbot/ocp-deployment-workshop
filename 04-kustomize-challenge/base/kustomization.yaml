@@ -9,4 +9,7 @@ resources:
 configMapGenerator:
   - name: web-message
     literals:
+      - APP_ENV=BASE
+      - ENV_COLOR=#6b7280
       - APP_MESSAGE=Hello from Kustomize base
+      - APP_SUBTITLE=Apply a staging or prod overlay to update this environment page.
