@@ -47,12 +47,15 @@ securityContext:
     drop:
       - ALL
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Challenge 1: fix YAML syntax so `helm lint` can parse this file.
 # Resources required for HPA to calculate utilisation
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 resources:
   limits:
     cpu: 200m
     memory: 256Mi
-  requests:
+  requests
     cpu: 100m
     memory: 128Mi
 
@@ -90,14 +93,16 @@ service:
   port: 8080
   targetPort: 8080
 
-# -------------------------------------------------------
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Challenge 2: after lint/template pass, deploy should fail
+# on OpenShift validation due to invalid TLS termination value.
+# Valid values: edge, passthrough, reencrypt
 # OpenShift Route (replaces K8s Ingress on OCP)
-# -------------------------------------------------------
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 route:
   enabled: true
-  # hostname: my-webapp.example.com
   tls:
-    termination: edge   # edge | passthrough | reencrypt
+    termination: edgeeee   
 
 # -------------------------------------------------------
 # App Persistence (web content / uploads)

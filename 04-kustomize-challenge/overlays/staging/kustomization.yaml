@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: user1-dev
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: web-message
+    behavior: replace
+    literals:
+      - APP_ENV=STAGING
+      - ENV_COLOR=#d97706
+      - APP_MESSAGE=Hello from STAGING environment
+      - APP_SUBTITLE=Release candidate validation overlay is active.
