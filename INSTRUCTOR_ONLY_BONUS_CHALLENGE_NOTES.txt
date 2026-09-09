@@ -1,0 +1,49 @@
+Instructor-only notes: Bonus Challenge troubleshooting key
+Do not commit this file.
+
+Scope
+- Chart path: 03-bonus-deployment
+- Single participant file: values.yaml
+- Expected troubleshooting flow: lint -> upgrade/install
+
+Challenge 1 (easy): YAML syntax parse error
+- Intentional defect:
+  resources:
+    ...
+    requests
+      cpu: 100m
+      memory: 128Mi
+- Participant command:
+  helm lint ./
+- Typical error shape:
+  error converting YAML to JSON: yaml: line <n>: could not find expected ':'
+- Expected fix:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+Challenge 2 (challenging): OpenShift API validation failure at deploy time
+- Intentional defect:
+  route:
+    tls:
+      termination: none
+- Why it fails:
+  Rendered YAML is syntactically valid, but OpenShift Route validates termination enum.
+- Participant command:
+  helm upgrade --install my-web-app ./ -n userN-dev
+- Typical error shape:
+  Route.route.openshift.io ... spec.tls.termination: Unsupported value: "edgee"
+- Expected fix:
+  termination: edge
+  (also acceptable: passthrough or reencrypt)
+
+Facilitator prompts (if teams are stuck)
+- "Which command stage are you on: lint, template, or upgrade?"
+- "Which command stage are you on: lint or upgrade?"
+- "Read the first error line only; what object/key is it naming?"
+- "Check Route TLS termination allowed values in comments next to the value."
+
+Validation after all fixes
+- helm lint ./
+- helm upgrade --install my-web-app ./ -n userN-dev
+- oc get pods,svc,routes -n userN-dev

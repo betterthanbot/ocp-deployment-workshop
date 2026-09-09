@@ -19,13 +19,17 @@ You are a developer joining the **ParksMap** team. The application displays nati
 
 ---
 
-## Workshop Structure
+## Workshop Structure (90 Minutes)
 
 | Section | Time | Description |
 |---------|------|-------------|
+| Setup: Dev Spaces + Tool Verification | ~15 min | Launch workspace, verify `helm`/`oc`, confirm namespaces |
 | [Part 1: Helm Foundations](01-helm-foundations/) | ~30 min | Deploy to DEV using a Helm chart |
 | [Part 2: Production Readiness](02-production-readiness/) | ~30 min | Debug and fix a broken deployment in SIT |
-| [Bonus: Deploy a Web App](03-bonus-deployment/) | If time permits | Try deploying this helm! |
+| Part 3: Safe Upgrade + Rollback Drill | ~10 min | Practice release revisions and rollback recovery |
+| Part 4: Lint + Template Validation Gate | ~5 min | Build a pre-deploy quality check habit |
+| [Bonus: Deploy a Web App](03-bonus-deployment/) | If time permits | Deploy a third-party chart with minimal guidance |
+| [Challenge 04: Kustomize Base + Overlay](04-kustomize-challenge/) | If time permits | Deploy with Kustomize overlay and update app by changing one variable |
 
 ---
 
@@ -253,9 +257,180 @@ Open the route URL in your browser and confirm the map shows national parks. ✅
 
 ---
 
-🎉 **That's it — hands-on complete!** You have deployed the same application across two environments using Helm, and resolved a real ACS security policy enforcement issue. If you completed this before lunch has started, why not try **03-bonus-deployment**! This would be a real work scenario where developers or providers just pass you a helm chart and you deploy them! 
+🎉 **Great progress!** You have deployed the same application across two environments using Helm, and resolved a real ACS security policy enforcement issue.
 
-Let's see if you can find the finishing page yourself!
+Next, continue with two short drills to build real-day-2 Helm operations skills.
+
+---
+
+## Step 6 — Exercise 3: Safe Upgrade + Rollback Drill (~10 min)
+
+This exercise teaches release lifecycle management using `helm upgrade`, `helm history`, and `helm rollback`.
+
+### 6.1 — Reinstall Baseline in DEV
+
+```bash
+cd /projects/ocp-deployment-workshop/01-helm-foundations
+helm upgrade --install parksmap ./ -f values-dev.yaml -n userN-dev
+oc get pods -n userN-dev
+```
+
+### 6.2 — Perform a Safe Upgrade
+
+Run a simple upgrade by overriding frontend replicas:
+
+```bash
+helm upgrade parksmap ./ -f values-dev.yaml -n userN-dev --set frontend.replicaCount=2
+oc rollout status deployment/parksmap -n userN-dev
+helm history parksmap -n userN-dev
+```
+
+You should now see a new Helm revision.
+
+### 6.3 — Simulate a Bad Upgrade, Then Recover
+
+Trigger a controlled failure by setting an invalid image tag:
+
+```bash
+helm upgrade parksmap ./ -f values-dev.yaml -n userN-dev --set frontend.image.tag=does-not-exist
+oc get pods -n userN-dev
+```
+
+Inspect rollout/pod errors, then roll back to the previous good revision:
+
+```bash
+helm history parksmap -n userN-dev
+helm rollback parksmap -n userN-dev
+oc rollout status deployment/parksmap -n userN-dev
+```
+
+**Outcome:** You can recover from bad releases without deleting and reinstalling.
+
+---
+
+## Step 7 — Exercise 4: Lint + Template Validation Gate (~5 min)
+
+This exercise reinforces a pre-deploy quality gate before cluster changes.
+
+### 7.1 — Validate Part 1 Chart
+
+```bash
+cd /projects/ocp-deployment-workshop/01-helm-foundations
+helm lint ./
+helm template parksmap ./ -f values-dev.yaml > /tmp/parksmap-dev-rendered.yaml
+```
+
+### 7.2 — Validate Part 2 Chart
+
+```bash
+cd /projects/ocp-deployment-workshop/02-production-readiness
+helm lint ./
+helm template parksmap ./ -f values-sit.yaml > /tmp/parksmap-sit-rendered.yaml
+```
+
+### 7.3 — Break/Fix Mini Challenge
+
+Temporarily comment out one required value (for example an image `repository`) in `values-sit.yaml`, re-run `helm template`, observe failure, then restore the value and confirm validation passes again.
+
+**Outcome:** You build a repeatable habit: `helm lint` + `helm template` before every deploy.
+
+---
+
+## Step 8 — Bonus Deployment (If Time Permits)
+
+Use this as an optional challenge after Exercises 1-4.
+You will troubleshoot **two intentional errors** in a single file (`values.yaml`), then complete deployment with `helm upgrade --install`.
+
+```bash
+cd /projects/ocp-deployment-workshop/03-bonus-deployment
+```
+
+### 8.1 — Easy Error: `helm lint` fails (YAML syntax)
+
+Run:
+
+```bash
+helm lint ./
+```
+
+It should fail due to malformed YAML in `resources.requests` inside `values.yaml`.
+Fix this block in `values.yaml`:
+
+```yaml
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+```
+
+Re-run `helm lint` until it passes.
+
+### 8.2 — Challenging Error: `helm upgrade` fails (OpenShift Route validation)
+
+Run:
+
+```bash
+helm upgrade --install my-web-app ./ -n userN-dev
+```
+
+It should fail because `route.tls.termination` is intentionally set to an invalid value in `values.yaml`.
+Fix it to one of: `edge`, `passthrough`, `reencrypt` (recommended: `edge`).
+
+### 8.3 — Deploy the fixed chart with upgrade workflow
+
+Re-run:
+
+```bash
+helm upgrade --install my-web-app ./ -n userN-dev
+oc get pods,svc,routes -n userN-dev
+```
+
+Open the route and find the finishing page.
+
+**Goal:** Practice deploying a third-party chart with minimal guidance, like in real project handovers.
+
+---
+
+## Step 9 — Challenge 04: Kustomize Base + Overlay (Optional)
+
+Now deploy a simple web app using Kustomize and switch configurations between **staging** and **prod**.
+
+```bash
+cd /projects/ocp-deployment-workshop/04-kustomize-challenge
+oc project userN-dev
+oc apply -k overlays/staging
+oc get pods,svc,routes -n userN-dev
+```
+
+Get the route URL:
+
+```bash
+oc get route kustom-web -n userN-dev -o jsonpath='https://{.spec.host}{"\n"}'
+```
+
+Apply the prod configuration:
+
+```bash
+oc apply -k overlays/prod
+oc rollout status deployment/kustom-web -n userN-dev
+```
+
+Refresh the same route page and confirm message changes from **STAGING** to **PRODUCTION**.
+
+**Goal:** Learn Kustomize base/overlay workflow and config-driven rollouts.
+
+---
+
+🎉 **Hands-on complete!** You now practiced:
+- Initial deployment in DEV
+- Security-driven fix in SIT
+- Upgrade and rollback operations
+- Local validation gates before cluster changes
+- Optional third-party chart deployment challenge
+- Optional Kustomize base + overlay deployment
 
 ---
 
@@ -425,8 +600,8 @@ ocp-deployment-workshop/
 │   ├── values.yaml
 │   ├── values-sit.yaml
 │   └── templates/
-├── solutions/                       # Full working reference — try first before peeking
-└── bonus-compose-migration/         # Bonus — docker-compose to Helm
+├── 03-bonus-deployment/             # Optional third-party chart challenge
+└── solutions/                       # Full working reference — try first before peeking
 ```
 
 ---

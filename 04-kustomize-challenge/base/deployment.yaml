@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kustom-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kustom-web
+  template:
+    metadata:
+      labels:
+        app: kustom-web
+    spec:
+      containers:
+        - name: web
+          image: registry.access.redhat.com/ubi9/httpd-24:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: web-message
+          command:
+            - /bin/bash
+            - -c
+            - |
+              mkdir -p /tmp/web
+              cat > /tmp/web/index.html <<EOF
+              <html><body><h1>${APP_MESSAGE}</h1></body></html>
+              EOF
+              python3 -m http.server 8080 --directory /tmp/web
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
