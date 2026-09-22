@@ -7,6 +7,8 @@
 
 replicaCount: 1
 
+namespace: challenge3
+
 # -------------------------------------------------------
 # Application Image
 # UBI9 httpd-24: OCP-certified, runs as non-root (uid 1001)

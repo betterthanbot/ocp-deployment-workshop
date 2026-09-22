@@ -96,12 +96,6 @@ spec:
                   <span class="badge">${APP_ENV} OVERLAY</span>
                   <h1>${APP_MESSAGE}</h1>
                   <p>${APP_SUBTITLE}</p>
-                  <div class="panel">
-                    <p>
-                      This page is generated from a Deployment command that reads overlay values from
-                      <code>ConfigMap/web-message</code>. Apply a different overlay and refresh this route.
-                    </p>
-                  </div>
                 </div>
               </body>
               </html>
