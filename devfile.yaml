@@ -22,8 +22,8 @@ components:
   - name: tools
     container:
       image: quay.io/kahlai/master-class:v1
-      memoryLimit: 8Gi
-      memoryRequest: 4Gi
-      cpuRequest: 2
-      cpuLimit: 8
+      memoryLimit: 8G
+      memoryRequest: 4G
+      cpuRequest: 4000m
+      cpuLimit: 8000m
       mountSources: true
