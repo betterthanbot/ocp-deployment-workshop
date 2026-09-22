@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "parksmap.labels" . | nindent 4 }}
   annotations:
-    "helm.sh/hook": post-install
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "5"
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
 spec:
   template:
     spec:
@@ -45,6 +45,8 @@ spec:
             - |
               # 1. Wait for MongoDB to be reachable
               echo "Waiting for MongoDB at $MONGODB_HOST..."
+              MONGO_WAIT_ATTEMPTS=0
+              MONGO_WAIT_MAX_ATTEMPTS=36
               until mongosh \
                 --host "$MONGODB_HOST" \
                 --username admin \
@@ -52,8 +54,13 @@ spec:
                 --authenticationDatabase admin \
                 --eval "db.adminCommand('ping')" \
                 --quiet; do
-                echo "MongoDB not ready, retrying in 60s..."
-                sleep 60
+                MONGO_WAIT_ATTEMPTS=$((MONGO_WAIT_ATTEMPTS + 1))
+                if [ "$MONGO_WAIT_ATTEMPTS" -ge "$MONGO_WAIT_MAX_ATTEMPTS" ]; then
+                  echo "MongoDB still not reachable after $MONGO_WAIT_ATTEMPTS attempts, giving up."
+                  exit 1
+                fi
+                echo "MongoDB not ready, retrying in 5s... (attempt $MONGO_WAIT_ATTEMPTS/$MONGO_WAIT_MAX_ATTEMPTS)"
+                sleep 5
               done
               echo "MongoDB is up."
 
@@ -84,6 +91,15 @@ spec:
 
               # 3. Trigger data load via internal service
               echo "Loading initial park data..."
-              curl -sf "$BACKEND_URL/ws/data/load" \
-                && echo "Data loaded successfully." \
-                || echo "Data load failed — backend may not be ready yet."
+              BACKEND_WAIT_ATTEMPTS=0
+              BACKEND_WAIT_MAX_ATTEMPTS=36
+              until curl -sf "$BACKEND_URL/ws/data/load"; do
+                BACKEND_WAIT_ATTEMPTS=$((BACKEND_WAIT_ATTEMPTS + 1))
+                if [ "$BACKEND_WAIT_ATTEMPTS" -ge "$BACKEND_WAIT_MAX_ATTEMPTS" ]; then
+                  echo "Data load failed — backend never became ready after $BACKEND_WAIT_ATTEMPTS attempts."
+                  exit 1
+                fi
+                echo "Backend not ready, retrying in 5s... (attempt $BACKEND_WAIT_ATTEMPTS/$BACKEND_WAIT_MAX_ATTEMPTS)"
+                sleep 5
+              done
+              echo "Data loaded successfully."

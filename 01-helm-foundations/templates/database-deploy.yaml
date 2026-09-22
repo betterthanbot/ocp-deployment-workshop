@@ -40,6 +40,20 @@ spec:
                   key: admin-pwd
           resources:
             {{- toYaml .Values.database.resources | nindent 12 }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.database.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 1
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.database.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 6
+            timeoutSeconds: 1
           volumeMounts:
             - name: mongodb-configdb
               mountPath: /data/configdb
