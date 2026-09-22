@@ -12,11 +12,10 @@ You are a developer joining the **ParksMap** team. The application displays nati
 
 ## Prerequisites
 
-- Completed the **OpenShift Basics** class
-- Completed the **ParksMap clickops lab**
-- Access to workshop namespaces — `challenge1` and `challenge2`
-- Optional challenge namespaces (if running Parts 7-8): `challenge3`, `challenge4-staging`, `challenge4-production`
-- A Red Hat OpenShift account with Dev Spaces enabled
+- Completed the **OpenShift Basic Ops** session
+- A Red Hat OpenShift cluster access.
+- Access to workshop namespaces: `challenge1`, `challenge2`, and `challenge3`
+- Optional challenge namespaces:  `challenge4-staging`, `challenge4-production`
 
 ---
 
@@ -31,26 +30,21 @@ You are a developer joining the **ParksMap** team. The application displays nati
 
 ---
 
-## Part 1 — Launch Your Dev Spaces Workspace
+## Part 1 — Setting up the Environment
 
-### Step 1.1 — Open Dev Spaces
+### Step 1.1 — Launch Your Dev Spaces Workspace
 
 1. Log in to your OpenShift web console.
 2. Click the **grid launcher icon** (⋮⋮⋮) in the top-right corner.
 3. Select **Red Hat OpenShift Dev Spaces**.
 
-> If Dev Spaces is not in the launcher, ask your workshop conductor.
+> If Dev Spaces is not in the launcher, ask your workshop instructor.
 
 ### Step 1.2 — Create a Workspace
 
 1. Click **Create Workspace**.
 2. Under **Choose an Editor**, select **VS Code - Opensource**.
 3. In the **Import from Git** field, paste:
-   ```
-   https://gitlab.com/betterthanbot/ocp-deployment-workshop.git
-   ```
-   
-   If you get a rate limit, do try to import from GitHub instead with this link
    ```
    https://github.com/betterthanbot/ocp-deployment-workshop.git
    ```
@@ -73,13 +67,17 @@ oc version
 oc whoami
 ```
 
-3. Check your assigned namespaces:
+3. Ensure that the namespaces mentioned in the pre-requisites are available.
+
+Check with
 
 ```bash
 oc projects
 ```
-
-You should see `challenge1` and `challenge2`. **Note these down** — you will use them throughout the workshop.
+If you did not see namespaces `challenge1` and `challenge2`, create them:
+```bash
+oc new-project <project-name>
+```
 
 ---
 
@@ -101,13 +99,8 @@ With that traffic flow in mind, map it to the two environments you will deploy t
 |--------|-----|-----|
 | Namespace | `challenge1` | `challenge2` |
 | Purpose | Rapid testing | Stable integration testing |
-| Image tags | `latest` allowed | `:latest` **blocked by ACS** |
+| Image tags | `:latest` allowed | `:latest` not allowed |
 
-### ⚠️ SIT: ACS Image Policy
-
-The SIT namespace has **Red Hat Advanced Cluster Security (ACS)** informing on a policy that **looks for `:latest` image tags**. This is a real-world security control to catch unversioned images from reaching integration environments.
-
-You will encounter this error during the SIT deployment — and fixing it is the exercise. 
 
 ---
 
@@ -146,22 +139,10 @@ helm install parksmap ./ --values=values-dev.yaml -n challenge1
 
 ```bash
 oc get pods -n challenge1
-oc get jobs -n challenge1
 oc get routes -n challenge1
 ```
 
-> **Why check jobs?** The chart includes a database init job that seeds the national parks data — the same step you previously ran manually via the `/ws/data/load` endpoint. If the map loads but shows no parks, check the job logs:
-> ```bash
-> oc logs job/mongo-init -n challenge1
-> ```
-
 Open the route URL in your browser and confirm the map shows national parks. ✅
-
-**When done, uninstall:**
-
-```bash
-helm uninstall parksmap -n challenge1
-```
 
 ---
 
@@ -180,19 +161,13 @@ cd /projects/ocp-deployment-workshop/02-production-readiness
 oc project challenge2
 ```
 
-**Try deploying as-is first:**
-
-```bash
-helm install parksmap ./ --values=values-sit.yaml -n challenge2
-```
-
-You will see an ACS admission error — this is expected! The `values-sit.yaml` file still has `tag: latest` set for all images.
-
 ---
 
 ### 4.2 — Fix `values-sit.yaml`
 
-Open `values-sit.yaml` in the VS Code file explorer. For **each image block**, comment out `tag: latest` and uncomment the `digest` line:
+Open `values-sit.yaml` in the VS Code file explorer. 
+
+For **each image block**, comment out `tag: latest` and uncomment the `digest` line:
 
 ```yaml
 # Before:
@@ -208,19 +183,21 @@ Open `values-sit.yaml` in the VS Code file explorer. For **each image block**, c
     digest: sha256:89d1e324846cb431df9039e1a7fd0ed2ba0c51aafbae73f2abd70a83d5fa173b
 ```
 
+**Why use digests?**
+- The `:latest` tag is a mutable tag and can point to different image contents over time.
+- The same image path + tag can be retargeted to a new digest later, causing "same name/tag, different binary" discrepancies.
+- A digest (`sha256:...`) is a cryptographic fingerprint tied to a specific image — it guarantees what you deploy is exactly what was tested.
+- Using digests makes deployments reproducible across environments and rollbacks predictable.
+- Many security controls (including ACS policies) prefer or enforce immutable image references.
+
+Is this best practice? Yes. For CI/CD and production-like environments, pinning images by digest is a widely recommended best practice for supply-chain integrity, auditability, and consistent releases.
+
 Repeat for `backend`, `database`, and `databaseinit`. All digests are pre-filled — just uncomment them.
 
-> **Why digests?** A tag like `:latest` is mutable and can point to a different image at any time. A digest (`sha256:...`) is a cryptographic fingerprint tied to a specific image — it guarantees what you deploy is exactly what was tested.
 
 ---
 
-### 4.3 — Verify and Redeploy
-
-Uninstall the failed release:
-
-```bash
-helm uninstall parksmap -n challenge2
-```
+### 4.3 — Verify and Deploy
 
 Preview the fixed templates — images should now show `@sha256:...` instead of `:latest`:
 
@@ -238,7 +215,6 @@ helm install parksmap ./ --values=values-sit.yaml -n challenge2
 
 ```bash
 oc get pods -n challenge2
-oc get jobs -n challenge2
 oc get routes -n challenge2
 ```
 
@@ -246,8 +222,7 @@ Open the route URL in your browser and confirm the map shows national parks. ✅
 
 ---
 
-🎉 **Great progress!** You have deployed the same application across two environments using Helm, and resolved a real ACS security policy enforcement issue.
-
+🎉 **Great progress!** You have deployed the same application across two environments using Helm!
 <!-- Next, continue with two short drills to build real-day-2 Helm operations skills. -->
 
 ---
@@ -256,12 +231,20 @@ Open the route URL in your browser and confirm the map shows national parks. ✅
 
 This exercise teaches release lifecycle management using `helm upgrade`, `helm history`, and `helm rollback`.
 
-### 5.1 — Reinstall Baseline in DEV
+### 5.1 — Verify Baseline in DEV
 
+Head back to the `01-helm-foundation` directory, ensure that the parksmap application is still running.
 ```bash
 cd /projects/ocp-deployment-workshop/01-helm-foundations
-helm upgrade --install parksmap ./ -f values-dev.yaml -n challenge1
 oc get pods -n challenge1
+```
+If any pod has crashed, try to uninstall with:
+```bash
+helm uninstall parksmap -n challenge1
+```
+then reinstall:
+```bash
+helm install parksmap ./ --values=values-dev.yaml -n challenge1
 ```
 
 ### 5.2 — Perform a Safe Upgrade
@@ -272,7 +255,10 @@ Run a simple upgrade by overriding frontend replicas:
 helm upgrade parksmap ./ -f values-dev.yaml -n challenge1 --set frontend.replicaCount=2 --set namespace=challenge1
 oc rollout status deployment/parksmap -n challenge1
 ```
-You should expect the rollout to succeed and the frontend runs with 2 replicas.
+You should expect the rollout to succeed and the frontend runs with 2 replicas:
+```bash
+oc get deployment parksmap -n challenge1
+```
 
 To view the list of Helm deployment revisions/history for this release:
 
@@ -319,7 +305,7 @@ This exercise reinforces a pre-deploy quality gate before cluster changes.
 
 ### 6.1 — Validate Part 1 Chart
 
-**Important: include `-f values-dev.yaml` when linting this exercise. If you run only `helm lint ./`, Helm lints using the chart's default `values.yaml`.**
+> **Important: include `-f values-dev.yaml` when linting this exercise. If you run only `helm lint ./`, Helm lints using the chart's default `values.yaml`.**
 
 ```bash
 cd /projects/ocp-deployment-workshop/01-helm-foundations
@@ -339,7 +325,7 @@ helm template parksmap ./ -f values-sit.yaml > /tmp/parksmap-sit-rendered.yaml
 
 Temporarily comment out one required value (for example an image `repository`) in `values-sit.yaml`, re-run `helm template`, observe failure, then restore the value and confirm validation passes again.
 
-**Some Suggested break/fix scenarios:**
+**Example Break Scenario:**
 
 - **Scenario A: YAML syntax error (lint-time failure)**
   - File/key to break: `02-production-readiness/values-sit.yaml` -> `frontend.resources.requests`
@@ -361,14 +347,16 @@ Temporarily comment out one required value (for example an image `repository`) i
   - Run: `helm upgrade --install parksmap ./ -f values-sit.yaml -n challenge2`
   - Fix: restore `frontend.port` to an integer (`8080`)
 
-**Outcome:** You build a repeatable habit: `helm lint` + `helm template` before every deploy.
+**Goal:** You build a repeatable habit: `helm lint` + `helm template` before every deploy.
 
 ---
 
 ## Part 7 — Bonus Challenge: Helm Troubleshooting
 
 Use this as a knowledge-check challenge after Exercises 1-4 to test what you've learned.
-You will troubleshoot two checkpoints in `values.yaml`, then finish with `helm upgrade --install`.
+You will troubleshoot `values.yaml`, then deploy a web application to OpenShift.
+
+**Goal:** Practice deploying a third-party chart with minimal guidance, like in real project handovers.
 
 Navigate to the `03-bonus-deployment` directory:
 
@@ -380,49 +368,45 @@ Use namespace `challenge3` for this challenge:
 ```bash
 oc project challenge3
 # If missing:
-# oc new-project challenge3
+oc new-project challenge3
 ```
 
-### 7.1 — Checkpoint 1: Lint failure
+> **Hint: Run a lint check to start off**
 
-Run:
+Let's see if you can find the finishing page yourself!
 
-```bash
-helm lint ./
-```
+---
 
-Fix the YAML syntax issue in `values.yaml` (`resources.requests` is intentionally malformed), then run `helm lint ./` again until it passes.
-
-### 7.2 — Checkpoint 2: Deploy-time validation failure
-
-Run:
-
-```bash
-helm upgrade --install my-web-app ./ -n challenge3
-```
-
-It should fail due to invalid Route TLS termination in `values.yaml`. Fix `route.tls.termination` to `edge`, then redeploy:
-
-```bash
-helm upgrade --install my-web-app ./ -n challenge3
-oc get pods,svc,routes -n challenge3
-```
-
-**Goal:** Practice deploying a third-party chart with minimal guidance, like in real project handovers.
+**That's it — hands-on complete!** You have deployed the application across two environments using Helm, and worked through key troubleshooting scenarios. If you completed this early, why not try **04-kustomize-challenge**! 
 
 ---
 
 ## Part 8 — Optional Exercise: Deploy with Kustomize Base + Overlay 
 
-Now deploy a styled web app dashboard using Kustomize into **staging** and **production**.
+Now, let's deploy a web application dashboard using Kustomize into **staging** and **production**.
+
+Before applying anything, inspect the folder structure and files:
+
+- `04-kustomize-challenge/base/` contains shared manifests used by all environments:
+  - `deployment.yaml` -> the web app workload
+  - `service.yaml` -> internal service endpoint
+  - `route.yaml` -> OpenShift external access
+  - `kustomization.yaml` -> base resource list + default ConfigMap values
+- `04-kustomize-challenge/overlays/staging/` and `04-kustomize-challenge/overlays/production/` contain environment-specific overrides.
+- Each overlay `kustomization.yaml` updates environment values (for example: message/theme) while reusing the same base manifests.
+
+This is the core Kustomize model: keep common YAML in `base` and keep environment differences in `overlays`.
 
 Navigate to the `04-kustomize-challenge directory`:
 
 ```bash
 cd /projects/ocp-deployment-workshop/04-kustomize-challenge
-# Make sure these namespaces exist first:
-# oc new-project challenge4-staging
-# oc new-project challenge4-production
+```
+Make sure the namespace: `challenge4-staging` and `challenge4-production` exist first, else create them. 
+
+Apply the overlay in staging:
+
+```bash
 oc apply -k overlays/staging
 oc get pods,svc,routes -n challenge4-staging
 ```
@@ -448,17 +432,18 @@ oc get route kustom-web -n challenge4-production -o jsonpath='https://{.spec.hos
 
 **Goal:** Learn Kustomize base/overlay workflow and config-driven rollouts.
 Kustomize is built into `oc` and `kubectl` (`apply -k`) and follows a declarative model: you define desired state in files, then apply changes.
+
 Helm is also declarative at deployment time, but it adds chart templating and release/version management (`install`, `upgrade`, `rollback`) on top.
 
 ---
 
 🎉 **Hands-on complete!** You now practiced:
 - Initial deployment in DEV
-- Security-driven fix in SIT
+- Image tagging best practice in SIT
 - Upgrade and rollback operations
 - Local validation gates before cluster changes
-- Optional third-party chart deployment challenge
-- Optional Kustomize base + overlay deployment
+- Deploying a Third-party chart by yourself
+- Kustomize base + overlay deployment
 
 ---
 
@@ -524,18 +509,6 @@ oc project challenge1        # Switch default namespace
 ---
 
 ## Troubleshooting
-
-### ACS blocks deployment — `admission webhook denied`
-
-**Cause:** One or more images in `values-sit.yaml` still use `tag: latest`.
-
-**Fix:** In `02-production-readiness/values-sit.yaml`, for every image block comment out `tag: latest` and uncomment `digest: sha256:...`. Then:
-```bash
-helm uninstall parksmap -n challenge2
-helm install parksmap ./ -f values-sit.yaml -n challenge2
-```
-
----
 
 ### `helm install` fails — "release already exists"
 
